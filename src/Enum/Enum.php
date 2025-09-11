@@ -3,8 +3,20 @@
 namespace Essa\APIToolKit\Enum;
 
 use ReflectionClass;
+use Illuminate\Contracts\Database\Eloquent\Castable;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 
-abstract class Enum
+/**
+ * Base Enum class extended to support direct usage in Laravel model casts.
+ *
+ * Example (in a model casts array):
+ *   'platform_name' => \App\Enums\Product\PricePlatform::class,
+ *
+ * Accepts either constant VALUE or constant NAME when setting.
+ * Returns the stored scalar value when getting.
+ * Throws InvalidArgumentException for invalid assignments.
+ */
+abstract class Enum implements Castable
 {
     /**
      * Get the values of every constant in the enum.
@@ -67,5 +79,43 @@ abstract class Enum
     final public static function getValue(string $const): mixed
     {
         return static::toArray()[$const] ?? null;
+    }
+
+    /**
+     * Enable direct casting via Eloquent by returning a caster instance.
+     */
+    public static function castUsing(array $arguments)
+    {
+        $enumClass = static::class;
+
+        return new class($enumClass) implements CastsAttributes {
+            public function __construct(private string $enumClass) {}
+
+            public function get($model, string $key, $value, array $attributes)
+            {
+                // Return raw stored value (already validated on set).
+                return $value;
+            }
+
+            public function set($model, string $key, $value, array $attributes)
+            {
+                $enum = $this->enumClass;
+                if ($value === null) {
+                    return [$key => null];
+                }
+
+                // Allow passing an already valid underlying value.
+                if ($enum::isValid($value)) {
+                    return [$key => $value];
+                }
+
+                // Allow passing the constant NAME (e.g. 'ChargeBee').
+                if (is_string($value) && $enum::isValidConst($value)) {
+                    return [$key => $enum::getValue($value)];
+                }
+
+                throw new \InvalidArgumentException("Invalid value '{$value}' for enum {$enum}.");
+            }
+        };
     }
 }
