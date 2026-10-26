@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit;
 
 use Essa\APIToolKit\Commands\ApiGenerateCommand;
 use Essa\APIToolKit\Commands\GeneratePermissions;
+use Essa\APIToolKit\Commands\InstallSkillCommand;
 use Essa\APIToolKit\Commands\MakeActionCommand;
-use Essa\APIToolKit\Commands\MakeEnumCommand;
 use Essa\APIToolKit\Commands\MakeFilterCommand;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,9 +50,9 @@ class APIToolKitServiceProvider extends ServiceProvider
             $this->commands([
                 ApiGenerateCommand::class,
                 MakeActionCommand::class,
-                MakeEnumCommand::class,
                 GeneratePermissions::class,
                 MakeFilterCommand::class,
+                InstallSkillCommand::class,
             ]);
         }
     }
