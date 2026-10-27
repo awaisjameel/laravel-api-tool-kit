@@ -12,11 +12,22 @@ class CommandConfigHandler
     /**
      * Get all API generator commands from the configuration.
      *
-     * @return array An array of API generator commands.
+     * @return array<string, class-string<\Essa\APIToolKit\Generator\Contracts\GeneratorCommandInterface>>
      */
     public static function getAllCommands(): array
     {
-        return Config::get('api-tool-kit-internal.api_generator_commands', []);
+        $commands = Config::get('api-tool-kit-internal.api_generator_commands', []);
+        if (!is_array($commands)) {
+            throw new ConfigNotFoundException('Generator commands must be a map.');
+        }
+        $validated = [];
+        foreach ($commands as $type => $class) {
+            if (!is_string($type) || !is_string($class) || !is_a($class, \Essa\APIToolKit\Generator\Contracts\GeneratorCommandInterface::class, true)) {
+                throw new ConfigNotFoundException('Invalid generator command configuration.');
+            }
+            $validated[$type] = $class;
+        }
+        return $validated;
     }
 
     /**
@@ -29,9 +40,9 @@ class CommandConfigHandler
      */
     public static function getCommandClass(string $commandName): ?string
     {
-        $commandClass = Config::get("api-tool-kit.api_generator_commands.{$commandName}");
+        $commandClass = self::getAllCommands()[$commandName] ?? null;
 
-        if ( ! $commandClass) {
+        if (! $commandClass) {
             throw new ConfigNotFoundException("API generator command configuration not found for command: {$commandName}");
         }
 
@@ -46,7 +57,7 @@ class CommandConfigHandler
      */
     public static function iterateOverCommandsFromConfig(callable $callback): void
     {
-        $apiGeneratorCommands = Config::get('api-tool-kit.api_generator_commands', []);
+        $apiGeneratorCommands = self::getAllCommands();
 
         foreach ($apiGeneratorCommands as $type => $commandClass) {
             call_user_func($callback, $type, $commandClass);

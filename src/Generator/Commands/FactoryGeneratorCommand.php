@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Commands;
 
 use Essa\APIToolKit\Enum\GeneratorFilesType;
@@ -10,10 +12,14 @@ class FactoryGeneratorCommand extends GeneratorCommand implements HasDynamicCont
 {
     protected GeneratorFilesType $type = GeneratorFilesType::FACTORY;
 
+    /**
+     * @return array<string, string>
+     */
     public function getContent(): array
     {
+        $namespace = $this->modelNamespace();
         return [
-            '{{factoryContent}}' => (new FactoryColumnsParser($this->apiGenerationCommandInputs->getSchema()))->parse(),
+            '{{factoryContent}}' => (new FactoryColumnsParser($this->apiGenerationCommandInputs->getSchema(), $namespace))->parse(),
         ];
     }
 

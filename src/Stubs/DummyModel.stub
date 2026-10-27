@@ -8,6 +8,7 @@ namespace {{DummyModelNameSpace}};
 use Essa\APIToolKit\Filters\Filterable;@endif('filter')
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+@if('factory')use {{DummyFactoryWithNameSpace}};@endif('factory')
 @if('soft-delete')use Illuminate\Database\Eloquent\SoftDeletes;@endif('soft-delete')
 
 class {{DummyModel}} extends Model
@@ -30,6 +31,11 @@ class {{DummyModel}} extends Model
             //
         ];
     }
+
+    @if('factory')protected static function newFactory(): {{DummyFactory}}
+    {
+        return {{DummyFactory}}::new();
+    }@endif('factory')
 
 {{modelRelations}}
 }

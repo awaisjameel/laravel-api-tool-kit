@@ -8,17 +8,17 @@ use Essa\APIToolKit\Enum\CacheKeys;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
+/** @phpstan-require-extends Model */
 trait HasCache
 {
     protected static function bootHasCache(): void
     {
-        static::updated(function (Model $model): void {
+        $flush = static function (self $model): void {
             $model->flushCache();
-        });
-
-        static::created(function (Model $model): void {
-            $model->flushCache();
-        });
+        };
+        static::updated($flush);
+        static::created($flush);
+        static::deleted($flush);
     }
 
     public function flushCache(): void

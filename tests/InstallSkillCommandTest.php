@@ -3,6 +3,7 @@
 namespace Essa\APIToolKit\Tests;
 
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Command\Command;
 
 class InstallSkillCommandTest extends TestCase
@@ -19,7 +20,7 @@ class InstallSkillCommandTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_installs_for_cursor(): void
     {
         $this->artisan('api-skill:install')
@@ -45,7 +46,7 @@ class InstallSkillCommandTest extends TestCase
         $this->assertStringContainsString('globs: ["**/*.php"]', $actionContent);
     }
 
-    /** @test */
+    #[Test]
     public function it_installs_for_claude_code(): void
     {
         File::put(base_path('CLAUDE.md'), "# Claude Instructions\n");
@@ -69,7 +70,7 @@ class InstallSkillCommandTest extends TestCase
         $this->assertStringContainsString('.claude/rules/laravel-api-tool-kit', $claudemd);
     }
 
-    /** @test */
+    #[Test]
     public function it_installs_for_copilot(): void
     {
         $this->artisan('api-skill:install')
@@ -95,7 +96,7 @@ class InstallSkillCommandTest extends TestCase
         $this->assertStringContainsString('# Action Classes', $phpSpecific);
     }
 
-    /** @test */
+    #[Test]
     public function it_installs_for_antigravity(): void
     {
         $this->artisan('api-skill:install')
@@ -118,7 +119,7 @@ class InstallSkillCommandTest extends TestCase
         $this->assertStringContainsString('# Action Classes', $content);
     }
 
-    /** @test */
+    #[Test]
     public function it_performs_smart_update_on_antigravity(): void
     {
         File::put(base_path('AGENTS.md'), "Existing user rules.\n");

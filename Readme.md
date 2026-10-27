@@ -1,159 +1,140 @@
-<h1><center> Laravel API tool kit</center></h1>
+# Laravel API Tool Kit - maintained fork
 
-<p align="center">
-    <img src="laravel-api-tool-kit.png" style="width:70%;">
-</p>
+Version 4 modernizes Ahmed Esa's API Toolkit for PHP 8.2-8.5 and Laravel 12/13. Laravel 13 needs PHP 8.3+. It includes upstream commits through `79793b2` and preserves this fork's legacy enum casting, snake-case table names, kebab-case routes, and unguarded model scaffolding.
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/essa/api-tool-kit.svg?style=flat-square)](https://packagist.org/packages/essa/api-tool-kit)
-![Test Status](https://img.shields.io/github/actions/workflow/status/ahmedesa/laravel-api-tool-kit/test.yml?label=tests&branch=master)
-[![Total Downloads](https://img.shields.io/packagist/dt/essa/api-tool-kit.svg?style=flat-square)](https://packagist.org/packages/essa/api-tool-kit)
+The Composer identity remains **`essa/api_tool_kit`**. A fork release must be available through your configured Composer repository; the upstream Packagist entry does not automatically serve fork tags. After a 4.x fork tag is published, a VCS setup can use:
 
-## Introduction
-
-Build production-grade Laravel APIs with standardized responses, dynamic pagination, advanced filtering, and **built-in AI architectural rules** that teach your coding assistant to follow your standards from the first draft.
-
-## Installation
-
-```bash
-composer require essa/api-tool-kit
-```
-
-## 🤖 AI Skill — Teach Your AI Assistant Your Architecture
-
-Ship production-grade APIs faster by giving your AI coding assistant a shared understanding of your architecture. One command installs **21 rule files** and **8 guided workflows** that ensure every AI-generated file fits your codebase from the first draft — no manual corrections needed.
-
-Supports **Claude Code**, **Cursor**, **GitHub Copilot**, and **Antigravity**.
-
-**Full experience** — slash commands, auto-loaded rules, per-tool native configuration:
-
-```bash
-php artisan api-skill:install [tool]
-```
-
-Supported tools: `claude`, `cursor`, `copilot`, `antigravity`. The installer copies rules and workflows to the correct location for your tool — e.g. `/investigate`, `/code-review`, `/new-endpoint` become real slash commands in Claude Code.
-
-**Quick setup via Laravel Boost** — agent-agnostic, works with all AI tools:
-
-```bash
-php artisan boost:add-skill ahmedesa/laravel-api-tool-kit
-```
-
-Installs to `.ai/skills/laravel-api-tool-kit/` — a universal location Claude Code, Cursor, Copilot, Antigravity, and Gemini all read from on demand. No slash commands, but zero configuration.
-
-> [!TIP]
-> In non-interactive environments (Docker/CI), bypass the selection prompt with:
-> `php artisan boost:add-skill ahmedesa/laravel-api-tool-kit --skill=laravel-api-tool-kit`
-
-### What's included
-
-| Category | Contents |
-|----------|----------|
-| **Rules** | Controllers, Models, Actions, DTOs, Services, Repositories, Filters, Enums, Events, Requests, Resources, Responses, Exceptions, Authorization, Testing, Database, Pagination, Anti-patterns, Code Quality, DDD, Dependency Injection |
-| **Workflows** | New endpoint, add filtering, code review, investigate, curl-test, organize knowledge, update knowledge, create workflow |
-| **DDD Support** | Works with both standard Laravel and Domain-Driven Design layouts |
-| **Project Defaults** | Configure primary key type, auth guard, and test base class once — the AI applies them everywhere |
-
-> [!TIP]
-> The AI Skill is the recommended way to generate code for projects using this package. It replaces the need for scaffolding generators by teaching your AI assistant the full architecture.
-
-[Read the full AI Skill documentation →](https://laravelapitoolkit.com/#/ai-skill)
-
----
-
-## Why Choose the Laravel API Toolkit?
-
-### 🤖 Built for AI-Assisted Development
-The built-in AI Skill teaches your coding assistant to generate code that follows your architecture out of the box — no more fixing AI output to match your standards.
-
-### Consistent Responses, Less Hassle
-The API Response feature simplifies generating consistent JSON responses. It provides a standardized format for your API responses:
 ```json
 {
-  "message": "your resource successfully",
-  "data": [
-    ...
-  ]
+    "repositories": [{"type": "vcs", "url": "https://github.com/awais-afoxtech/laravel-api-tool-kit"}],
+    "require": {"essa/api_tool_kit": "^4.0"}
 }
 ```
 
-### Pagination Done Right
-Don't fuss over managing the number of results per page. The dynamic pagination feature adapts effortlessly to your needs, giving you control without complications.
+See [MIGRATION.md](MIGRATION.md) for breaking changes and [CHANGELOG.md](CHANGELOG.md) for the prepared release.
 
-```php
-$users = User::dynamicPaginate();
+## Setup and responses
+
+Laravel discovers both service providers. Publish configuration/stubs when customization is needed:
+
+```sh
+php artisan vendor:publish --provider="Essa\APIToolKit\APIToolKitServiceProvider" --tag=config
+php artisan vendor:publish --provider="Essa\APIToolKit\APIToolKitServiceProvider" --tag=stubs
 ```
 
-### Simplified Filtering
-Refine query results with simplicity. The powerful filtering system lets you filter, sort, search, and even include relationships with ease.
+Use `Essa\APIToolKit\Api\ApiResponse` in application controllers. Generated controllers include it directly. Success responses contain `status`, `message`, and `data`; errors use an `errors` array with status/title/detail and `application/problem+json`. Existing response method names remain available, including `responseSuccess`, `responseCreated`, `responseAccepted`, `responseDeleted`, `responseNoContent`, and the error helpers. Deletion/no-content responses have HTTP 204.
+
+Register exception rendering in `bootstrap/app.php`:
 
 ```php
-Car::useFilters()->get();
+use Essa\APIToolKit\APIToolKit;
+use Illuminate\Foundation\Configuration\Exceptions;
+
+// Application::configure(...)
+    ->withExceptions(function (Exceptions $exceptions): void {
+        APIToolKit::registerExceptionRenderers($exceptions);
+    });
 ```
 
-### Logic Made Clear
-Tackle complex business logic with Actions. These gems follow the command pattern, boosting readability and maintenance for your code.
+JSON requests get the package envelope for authentication, validation, HTTP and database errors. Prepared Laravel model/authorization exceptions retain their HTTP status, and HTTP headers such as `Retry-After` survive rendering. Database errors return 500; SQL details are included only with debug enabled outside production. Non-JSON requests retain Laravel's normal rendering.
+
+## Generate a resource
+
+```sh
+php artisan api:generate BlogPost "title:string|amount:decimal(10,2)|published_at:datetime:nullable" --all --soft-delete
+```
+
+The generator creates configured models, migrations, controllers, requests, resources, factories, seeders, filters, routes and test scaffolds. Names follow `blog_posts` for tables and `/blog-posts` for routes. Configure `groups_files_paths`, namespaces and `groups_url_prefixes` for alternative structures; factories/relations use the configured model namespace. Register the generated routes in the host application, for example through Laravel's `withRouting(api: ...)`. The configured URL prefix describes that application route group; it does not prepend itself inside the generated file.
+
+Schema fields use `name:type:modifier:modifier|...`. Names are simple PHP identifiers. Types use Laravel Blueprint method names; `int`, `varchar`, and `datetime` normalize to `integer`, `string`, and `dateTime`. Numeric type arguments such as `string(80)` and `decimal(10,2)` are supported. Simple `enum(draft,published)` values contain letters, digits, underscores or hyphens; optional matching quotes are removed. Embedded quotes and other enum punctuation are rejected before writing because Blueprint embeds these values directly in migration SQL. For richer values, write an application migration and validation rule explicitly. Modifiers use Blueprint syntax, such as `nullable`, `unique`, or `default('draft')`. Quoted values cannot contain the schema's `:` / `|` separators. Review database-specific types, lengths/defaults and constraints before running generated migrations.
+
+Existing selected source files are preserved by default. Use **`--force`** only after reviewing the files to regenerate. Rendered PHP is syntax-checked before writing. Writes are atomic per file; failed runs attempt to restore planned files from their snapshots and report restoration failures. Managed route blocks are replaced rather than appended twice, and a single existing create-table migration is reused. Multiple matching create migrations fail clearly. Already-run migrations should normally be evolved with a new migration rather than overwritten. Serialize generator invocations for a project; custom generator commands must manage any side effects outside their configured output files.
+
+Generated models intentionally retain **`protected $guarded = []`**, the fork's empty `casts()`, `$with`, `$appends`, and `$translatable` scaffolding. Controllers persist validated data, including when `--request` is omitted. Review schema rules, authentication, authorization, sensitive fields, relationship conventions, factories, and the deliberately incomplete test scaffolds before exposing an application endpoint. Generation does not define application-specific access policy.
+
+Soft-delete restoration uses **POST** `/{id}/restore`; permanent deletion uses **DELETE** `/{id}/permanent-delete`. GET does not restore records. Generated resource dates accept immutable/mutable date objects as well as strings.
+
+`make:action` and `make:filter` generate standalone scaffolds. Use Laravel's native `make:enum Enums/Status --string` for new backed enums. Generated factories/seeders require `fakerphp/faker` in the application's development environment.
+
+## Filtering and pagination
 
 ```php
-class CarController extends Controller
+use Essa\APIToolKit\Filters\QueryFilters;
+
+class BlogPostFilters extends QueryFilters
 {
-    public function __construct(
-        private readonly CreateCarAction $createCar,
-    ) {}
+    protected array $allowedFilters = ['state'];
+    protected array $allowedSorts = ['title', 'created_at'];
+    protected array $allowedIncludes = ['author'];
+    protected array $columnSearch = ['title'];
+    protected array $relationSearch = ['author' => ['name']];
 
-    public function store(CreateCarRequest $request): JsonResponse
+    public function year(string $term): void
     {
-        $car = $this->createCar->execute($request->validated());
-        return $this->responseCreated(trans('car.created'), new CarResource($car));
+        $this->builder->whereYear('created_at', $term);
     }
 }
 ```
 
-### Media? Handled.
-Handle file uploads and deletions like a pro. The Media Helper streamlines media management, leaving you with clean and organized file handling.
+Use `Filterable` on a model and set `protected string $default_filters = BlogPostFilters::class`, or pass a filter class/`FiltersDTO` explicitly to `useFilters()`. Generated filters start with empty allowlists so the application chooses exposed columns and relationships.
+
+Request options include `?state=draft,published`, `?sorts=-created_at`, `?includes=author`, and `?search=term`. The first allowed sort is applied. Custom filters must be public, non-static, accept exactly one argument, return `void`, and be declared outside the base `QueryFilters` infrastructure. Keep helper methods protected/private. Query keys cannot invoke base setters or recursively call `apply()`. Malformed array-valued request parameters return validation errors. `DateFilter` / `TimeFilter` add the existing date/time range filters.
+
 ```php
-$filePath = MediaHelper::uploadFile($file, $path);
+BlogPost::useFilters()->dynamicPaginate();
 ```
 
-### Enums for Clarity
-The Enum class provides a way to work with enumerations, eliminating hardcoded values in your code:
+`per_page` falls back to the configured positive default for malformed/non-positive values and respects `max_pagination_limit`. Pagination links preserve query parameters. `pagination=none` returns the collection without pagination; applications own authorization and result-size limits for that mode.
+
+## Enums, model traits and helpers
+
+Use `Essa\APIToolKit\Enum\EnumHelpers` in string- or integer-backed enums. `values()`, `names()`, `toArray()`, `isValid()` and `fromValue()` use strict backing-value types; integer `1` and string `"1"` differ.
+
+The fork's `Essa\APIToolKit\Enum\Enum` constant class remains available for existing models. Its Eloquent cast accepts a declared constant name or a strict declared value, stores the underlying scalar and returns the stored value. Native Laravel backed-enum casts return enum instances. These are intentionally different APIs; no forced conversion of existing data occurs.
+
+Model helpers include activation, generated codes, slugs, cache invalidation and ordering. `HasCreatedBy` uses the configured Eloquent user model. `HasOrder::sort()` runs in a transaction and fails on missing records rather than partially reordering. `HasPermissions` expects a controller supporting Laravel's instance `middleware()` API; an application using a plain base controller must extend `Illuminate\Routing\Controller` or integrate middleware through its own architecture. Permission middleware itself belongs to the application.
+
+`generate:permissions posts` writes a mapping and deduplicated CSV, preserving other groups and working without a missing template. Enable `api-tool-kit.use_soft_delete` for `restore` / `force-delete` entries. Register that middleware and provision permissions in your own authorization system.
+
+`dateTimeFormat()` accepts `DateTimeInterface`, strings and null. `createOrRandomFactory()` returns one existing model or creates one with the model's factory; factories are an application development dependency.
+
+## Media and external services
+
 ```php
-enum UserType: string
-{
-    case ADMIN = 'admin';
-    case STUDENT = 'student';
-}
+use Essa\APIToolKit\MediaHelper;
+
+$images = MediaHelper::disk('public');
+$path = $images->uploadFile($request->file('image'), 'images');
 ```
 
----
+Each `disk()` selection is an independent `MediaStorage` instance. Static `MediaHelper` calls use Laravel's default disk, and no selection leaks to another call. Uploads reject unsafe file-name path components and report storage failures. Base64 uploads require a valid raster-image data URI whose decoded image header matches its MIME label; generated extensions reflect the actual image type. SVG and malformed/non-image data are rejected. Protect application upload sizes and access rules separately.
 
-### API Generator
+`ConsumesExternalServices::makeRequest($method, $url, $data, $headers, $isJsonRequest)` uses Laravel's HTTP client. Provide `$baseUri`, optional timeout/connect-timeout and opt-in retry properties. Override `resolveAuthorization(PendingRequest): PendingRequest` and `handleRequestError(Response)` as needed. Form encoding is honored, JSON remains the response format, failed responses throw by default, and redirects are rejected rather than forwarding credentials. Configure retries deliberately for non-idempotent operations.
 
-The API Generator automates file setup, creating key files from migrations to controllers. Use one command to kickstart your API development.
+## Optional AI rules/workflows
 
-> [!NOTE]
-> For AI-assisted development, the [AI Skill](#-ai-skill--teach-your-ai-assistant-your-architecture) is the recommended approach. It teaches your AI assistant the full architecture so generated code fits your project from the start. The API Generator remains available for developers who prefer traditional scaffolding.
-
-```bash
-php artisan api:generate ModelName --all
+```sh
+php artisan api-skill:install claude
+php artisan api-skill:install cursor
+php artisan api-skill:install copilot
+php artisan api-skill:install antigravity
 ```
 
-<p align="center">
-    <img src="api-generator.png">
-</p>
+The archive includes 22 rule files and 9 workflows. The installer produces native tool files and preserves unrelated instruction text. Existing unmarked workflow/knowledge files are retained unless `--force` is explicit. Managed marker sections update literally and idempotently; generated skill descriptions use valid quoted YAML. Review project defaults such as primary keys and guards before applying these optional application-development rules. Installing these files does not run their workflows.
 
-## :film_strip: Video Tour
-If you'd prefer a more visual review of this package, please watch this video on Laravel Package Tutorial.
+## Development and validation
 
-[<img src="https://img.youtube.com/vi/lZ9PPW-5utw/0.jpg" width="450">](https://youtu.be/lZ9PPW-5utw)
+```sh
+composer install
+composer test
+composer check-code
+composer test-coverage
+```
 
-## Official Documentation
-Access our documentation to unlock the full potential of the Laravel API Toolkit:
+The tracked lock records the primary PHP 8.5 / Laravel 13 development environment.
+When developing on an older supported PHP branch, run `composer update` to resolve
+its compatible PHPUnit/Testbench versions; CI resolves each supported pair separately.
 
-[Explore the Documentation](https://laravelapitoolkit.com/)
+Tests cover current PHPUnit attributes, generators and actual migrations, enum casting, filters, media isolation/content, external-service request encoding, exception responses, permission/skill installers and file protection. PHPStan level 8 also analyzes concrete consumers of reusable traits, without an error baseline. CI covers maintained PHP/Laravel combinations on Linux and Windows, with stable/minimum dependencies. Release acceptance additionally installs real Composer archives in no-dev Laravel 12/13 consumers and executes generated CRUD and cached routes. Live hosting and the application's production database/authorization integrations remain application acceptance work.
 
-## Contributing
-We welcome your contributions to help make this package even better. Please refer to our [CONTRIBUTING.md](CONTRIBUTING.md) file for contribution guidelines.
-
-## License
-
-By contributing to the Laravel API Toolkit, you agree that your contributions will be licensed under the project's [MIT License](LICENSE.md).
+Upstream authorship and the [MIT license](LICENSE.md) are preserved. See [CONTRIBUTING.md](CONTRIBUTING.md).

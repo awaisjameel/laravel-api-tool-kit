@@ -5,12 +5,11 @@ namespace Essa\APIToolKit\Tests;
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use PHPUnit\Framework\Attributes\Test;
 
 class DynamicPaginateTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function getAllRecordsWithDynamicPagination(): void
     {
         TestModel::factory(50)->create();
@@ -27,9 +26,7 @@ class DynamicPaginateTest extends TestCase
         $this->assertCount($randomNumber, $paginatedRecords->all());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function getAllRecordsWithoutPagination(): void
     {
         TestModel::factory(50)->create();
@@ -44,9 +41,7 @@ class DynamicPaginateTest extends TestCase
         $this->assertCount(50, $paginatedRecords->all());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function getRecordsWithDefaultPerPage(): void
     {
         $randomNumber = rand(1, 30);
@@ -63,9 +58,7 @@ class DynamicPaginateTest extends TestCase
         $this->assertCount($randomNumber, $paginatedRecords->all());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function itCapsPerPageToMaximumLimit(): void
     {
         $maxLimit = 10;

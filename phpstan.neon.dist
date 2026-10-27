@@ -1,0 +1,12 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - config
+        - tests/Analysis
+    configDirectories:
+        - config
+    tmpDir: build/phpstan
+    checkModelProperties: true
+    parallel:
+        maximumNumberOfProcesses: 1

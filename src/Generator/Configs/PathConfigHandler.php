@@ -6,9 +6,10 @@ namespace Essa\APIToolKit\Generator\Configs;
 
 use Essa\APIToolKit\Generator\Exception\ConfigNotFoundException;
 use Essa\APIToolKit\Generator\GeneratedFileInfo;
+use Essa\APIToolKit\Generator\ModelNaming;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Str;
 
+/** @phpstan-type PathInfo array{folder_path: string, file_name: string, namespace: string|null} */
 class PathConfigHandler
 {
     /**
@@ -16,11 +17,23 @@ class PathConfigHandler
      *
      * @param string $pathGroup The name of the path group.
      *
-     * @return array The configuration array for the specified path group.
+     * @return array<string, PathInfo>
      */
     public static function getConfigForPathGroup(string $pathGroup): array
     {
-        return Config::get("api-tool-kit.groups_files_paths.{$pathGroup}", []);
+        $paths = Config::get("api-tool-kit.groups_files_paths.{$pathGroup}", []);
+        if (!is_array($paths)) {
+            throw new ConfigNotFoundException('Path group must be a map.');
+        }
+        $validated = [];
+        foreach ($paths as $type => $path) {
+            if (!is_string($type) || !is_array($path) || !is_string($path['folder_path'] ?? null) || !is_string($path['file_name'] ?? null)
+                || (!is_string($path['namespace'] ?? null) && ($path['namespace'] ?? null) !== null)) {
+                throw new ConfigNotFoundException('Invalid generator path configuration.');
+            }
+            $validated[$type] = ['folder_path' => $path['folder_path'], 'file_name' => $path['file_name'], 'namespace' => $path['namespace'] ?? null];
+        }
+        return $validated;
     }
 
     /**
@@ -30,14 +43,15 @@ class PathConfigHandler
      * @param string $fileType The type of the file.
      *
      * @throws ConfigNotFoundException If the path information is not found for the specified type in the config file.
-     */
+     *
+     * @return PathInfo */
     public static function getFilePathInfo(string $pathGroupName, string $fileType): array
     {
         $config = self::getConfigForPathGroup($pathGroupName);
 
         $filePathInfo = $config[$fileType] ?? null;
 
-        if ( ! $filePathInfo) {
+        if (! $filePathInfo) {
             throw new ConfigNotFoundException("File path information not found for type: {$fileType}");
         }
 
@@ -58,10 +72,21 @@ class PathConfigHandler
     public static function generateFilePathInfo(string $pathGroupName, string $generatedFileType, string $modelName): GeneratedFileInfo
     {
         $pathInfo = self::getFilePathInfo($pathGroupName, $generatedFileType);
+        $folder = self::substituteModelValues($modelName, $pathInfo['folder_path']);
+        $fileName = self::substituteModelValues($modelName, $pathInfo['file_name']);
+        if ($generatedFileType === 'migration' && str_ends_with($fileName, '_create_' . ModelNaming::tableName($modelName) . '_table.php')) {
+            $existing = glob($folder . '/*_create_' . ModelNaming::tableName($modelName) . '_table.php');
+            if ($existing === false || count($existing) > 1) {
+                throw new ConfigNotFoundException('Cannot identify one existing create-table migration.');
+            }
+            if (count($existing) === 1) {
+                $fileName = basename($existing[0]);
+            }
+        }
 
         return new GeneratedFileInfo(
-            fileName: self::substituteModelValues($modelName, $pathInfo['file_name']),
-            folderPath: self::substituteModelValues($modelName, $pathInfo['folder_path']),
+            fileName: $fileName,
+            folderPath: $folder,
             namespace: $pathInfo['namespace'] ? self::substituteModelValues($modelName, $pathInfo['namespace']) : null
         );
     }
@@ -72,7 +97,7 @@ class PathConfigHandler
      * @param string $pathGroupName The name of the path group.
      * @param string $modelName The model associated with the path resolver.
      *
-     * @return GeneratedFileInfo[] An array of GeneratedFileInfo instances for all types in the specified group.
+     * @return array<string, GeneratedFileInfo>
      *
      * @throws ConfigNotFoundException
      */
@@ -124,11 +149,15 @@ class PathConfigHandler
     /**
      * Get all path group names from the configuration.
      *
-     * @return array The names of all path groups.
+     * @return list<string>
      */
     public static function getAllPathGroups(): array
     {
-        return array_keys(Config::get('api-tool-kit.groups_files_paths'));
+        $groups = Config::get('api-tool-kit.groups_files_paths', []);
+        if (!is_array($groups)) {
+            throw new ConfigNotFoundException('Path groups must be a map.');
+        }
+        return array_values(array_filter(array_keys($groups), is_string(...)));
     }
 
     /**
@@ -155,7 +184,7 @@ class PathConfigHandler
             $string,
             [
                 '{ModelName}' => $modelName,
-                '{TableName}' => Str::plural(Str::snake($modelName)),
+                '{TableName}' => ModelNaming::tableName($modelName),
             ]
         );
     }

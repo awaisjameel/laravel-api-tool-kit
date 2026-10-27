@@ -3,14 +3,14 @@ name: laravel-api-tool-kit
 description: >
   Build production-grade Laravel REST APIs. Covers general best practices
   (code quality, DI, events, auth, exceptions, testing, database) AND
-  essa/api-tool-kit specific patterns (ApiResponse, QueryFilters, dynamicPaginate, EnumHelpers).
-  Use when creating or reviewing any Laravel API code in a project that has essa/api-tool-kit installed.
+  essa/api_tool_kit specific patterns (ApiResponse, QueryFilters, dynamicPaginate, EnumHelpers).
+  Use when creating or reviewing any Laravel API code in a project that has essa/api_tool_kit installed.
 license: MIT
 metadata:
   author: https://github.com/ahmedesa
-  version: "3.2.0"
+  version: "4.0.0"
   domain: backend
-  triggers: essa/api-tool-kit, ApiResponse, QueryFilters, dynamicPaginate, useFilters, EnumHelpers, create a controller, add an endpoint, add filtering, create a model, create a resource, create an action, create an event, review this API code, add pagination, write a test, how should I structure this feature
+  triggers: essa/api_tool_kit, ApiResponse, QueryFilters, dynamicPaginate, useFilters, EnumHelpers, create a controller, add an endpoint, add filtering, create a model, create a resource, create an action, create an event, review this API code, add pagination, write a test, how should I structure this feature
   role: specialist
   scope: implementation
   output-format: code
@@ -19,12 +19,14 @@ metadata:
 
 # Laravel API Tool Kit Skill
 
-This project uses the `essa/api-tool-kit` package. All API code MUST follow the standards in this skill — both the general Laravel best practices and the package-specific patterns.
+This project uses the `essa/api_tool_kit` package. All API code MUST follow the standards in this skill — both the general Laravel best practices and the package-specific patterns.
 
 ## Assumed Setup
 
-- `essa/api-tool-kit` is installed via Composer
+- `essa/api_tool_kit` is installed via Composer
 - Base `Controller` already uses the `ApiResponse` trait
+- Base `Controller` includes Laravel's `AuthorizesRequests` trait when examples use `$this->authorize()`
+- The application registers `APIToolKit::registerExceptionRenderers()` through `withExceptions` for the package JSON exception envelope
 - The `dateTimeFormat()` global helper is available
 - `dynamicPaginate()` macro is registered on the query builder
 
@@ -32,8 +34,9 @@ This project uses the `essa/api-tool-kit` package. All API code MUST follow the 
 
 **Fill these in when installing the skill.** The AI reads this section to match existing project conventions.
 
-- **Primary key type**: `ulid` ← change to `id` if this project uses auto-increment
-- **Auth guard**: `sanctum` ← change if different (e.g. `api`)
+- **Primary key type**: inspect existing migrations/models; the package generator uses auto-increment `id` by default. Use ULIDs only when the application requires them.
+- **Auth guard**: inspect application routes/auth configuration; confirm requirements before adding a new guard or authentication dependency.
+- **Mass assignment**: preserve the fork's `protected $guarded = []`; write validated, explicitly selected input and review sensitive fields.
 - **Test class**: `Tests\TestCase` ← change if the project uses a custom base
 
 ## Structure Mapping & Customization

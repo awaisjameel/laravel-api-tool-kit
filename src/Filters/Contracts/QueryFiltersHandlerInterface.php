@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Filters\Contracts;
 
 use Closure;

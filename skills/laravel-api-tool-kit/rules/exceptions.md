@@ -26,7 +26,7 @@ return $this->responseUnprocessable(trans('car.limit_reached'));
 
 ## Package-Handled Exceptions
 
-The package automatically converts these exceptions to the correct JSON response. Always throw the right one — never build the response manually.
+Register `Essa\APIToolKit\APIToolKit::registerExceptionRenderers($exceptions)` in `bootstrap/app.php`'s `withExceptions` callback to enable the package JSON envelope. Non-JSON requests retain Laravel's normal rendering. With that integration enabled, the package converts these exceptions to JSON responses. Throw the exception matching the failure.
 
 | Exception | HTTP Status | When to throw |
 |-----------|-------------|---------------|

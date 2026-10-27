@@ -26,9 +26,11 @@ enum CarStatusEnum: string
 | Method | Returns |
 |--------|---------|
 | `values()` | `['pending', 'active', ...]` |
-| `names()` | `['Pending', 'Active', ...]` |
+| `names()` | `['PENDING', 'ACTIVE', ...]` |
 | `isValid($v)` | `bool` |
 | `fromValue($v)` | enum case |
+
+Native helper validation uses strict backing types: integer `1` differs from string `"1"`. Existing fork models may retain `Essa\APIToolKit\Enum\Enum` constant-class casts, which return stored scalar values. Do not apply the enum-instance resource example to those casts or convert existing data without an explicit migration.
 
 ## In Model
 

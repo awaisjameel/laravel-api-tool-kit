@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -8,16 +10,19 @@ use Illuminate\Support\Str;
 
 /**
  * @method static findByCode($code)
+ * @phpstan-require-extends Model
  */
 trait HasGeneratedCode
 {
     protected static function bootHasGeneratedCode(): void
     {
-        static::creating(function (Model $model): void {
+        static::creating(function (self $model): void {
             $model->refreshCode();
         });
     }
 
+    /** @param Builder<static> $query
+     * @return static */
     public function scopeFindByCode(Builder $query, string $code): Model
     {
         return $query->where($this->codeField(), $code)

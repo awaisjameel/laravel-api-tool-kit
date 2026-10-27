@@ -5,12 +5,11 @@ namespace Essa\APIToolKit\Tests;
 use Essa\APIToolKit\Filters\DTO\FiltersDTO;
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Test;
 
 class FiltersDtoTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function createFiltersDTOFromRequest(): void
     {
         $request = new Request([
@@ -28,9 +27,7 @@ class FiltersDtoTest extends TestCase
         $this->assertEquals('keyword', $filtersDTO->getSearch());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithCustomFiltersDTO(): void
     {
         TestModel::factory()->create([

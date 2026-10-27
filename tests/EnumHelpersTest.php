@@ -3,22 +3,23 @@
 namespace Essa\APIToolKit\Tests;
 
 use Essa\APIToolKit\Tests\Mocks\TestBackedEnum;
+use PHPUnit\Framework\Attributes\Test;
 
 class EnumHelpersTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function itReturnsAllValues(): void
     {
         $this->assertEquals(['active', 'inactive', 'pending'], TestBackedEnum::values());
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsAllNames(): void
     {
         $this->assertEquals(['Active', 'Inactive', 'Pending'], TestBackedEnum::names());
     }
 
-    /** @test */
+    #[Test]
     public function itConvertsToAssociativeArray(): void
     {
         $expected = [
@@ -30,7 +31,7 @@ class EnumHelpersTest extends TestCase
         $this->assertEquals($expected, TestBackedEnum::toArray());
     }
 
-    /** @test */
+    #[Test]
     public function itValidatesEnumValues(): void
     {
         $this->assertTrue(TestBackedEnum::isValid('active'));
@@ -41,7 +42,7 @@ class EnumHelpersTest extends TestCase
         $this->assertFalse(TestBackedEnum::isValid(123));
     }
 
-    /** @test */
+    #[Test]
     public function itReturnsEnumCaseFromValue(): void
     {
         $this->assertSame(TestBackedEnum::Active, TestBackedEnum::fromValue('active'));

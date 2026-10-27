@@ -21,4 +21,4 @@ $cars = Car::with(['brand'])->useFilters()->dynamicPaginate();
 | `page` | `?page=2` | Page number |
 | `pagination` | `?pagination=none` | Disable pagination, return all records |
 
-The package enforces a maximum `per_page` value. Requests above the limit are silently capped — they do not throw an error. Do not hardcode a specific max in tests; test that large values are accepted without error instead.
+The package enforces its configured positive maximum `per_page`. Larger values are capped, and malformed/non-positive sizes fall back to the configured positive default. Test the effective limit from configuration and inspect returned pagination metadata; an HTTP success alone does not prove the cap. Links retain query parameters. `pagination=none` is an unbounded collection mode whose authorization and result-size policy belong to the application.

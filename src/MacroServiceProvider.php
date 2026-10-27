@@ -19,18 +19,18 @@ class MacroServiceProvider extends ServiceProvider
             /** @var Request $request */
             $request = $app->get('request');
 
-            if ('none' === $request->get('pagination')) {
+            if ('none' === $request->input('pagination')) {
                 return $this->get();
             }
 
             $page = Paginator::resolveCurrentPage();
 
-            $perPage = $request->get('per_page', config('api-tool-kit.default_pagination_number'));
-
-            $maxPerPage = config('api-tool-kit.max_pagination_limit');
-
-            if ($maxPerPage && $perPage > $maxPerPage) {
-                $perPage = $maxPerPage;
+            $default = filter_var(config('api-tool-kit.default_pagination_number', 20), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 20;
+            $raw = $request->input('per_page', $default);
+            $perPage = (is_string($raw) || is_int($raw) ? filter_var($raw, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false) ?: $default;
+            $maxPerPage = filter_var(config('api-tool-kit.max_pagination_limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($maxPerPage !== false) {
+                $perPage = min($perPage, $maxPerPage);
             }
 
             $results = ($total = $this->toBase()->getCountForPagination())
@@ -40,7 +40,7 @@ class MacroServiceProvider extends ServiceProvider
             return $this->paginator($results, $total, $perPage, $page, [
                 'path' => Paginator::resolveCurrentPath(),
                 'pageName' => 'page',
-            ]);
+            ])->withQueryString();
         });
     }
 }

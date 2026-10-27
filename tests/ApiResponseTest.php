@@ -5,6 +5,7 @@ namespace Essa\APIToolKit\Tests;
 use Essa\APIToolKit\Api\ApiResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,9 +22,7 @@ class ApiResponseTest extends TestCase
         parent::setUp();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseServerError(): void
     {
         $response = $this->classThatImplementTheTrait->responseServerError('Server error details', 'Server error message');
@@ -32,9 +31,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseSuccess(): void
     {
         $response = $this->classThatImplementTheTrait->responseSuccess('Success message', ['data' => 'value']);
@@ -46,6 +43,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals(['data' => 'value'], (array) $responseData->data);
     }
 
+    #[Test]
     public function responseUnprocessable(): void
     {
         $response = $this->classThatImplementTheTrait->responseUnprocessable('Validation failed', 'Unprocessable entity');
@@ -56,9 +54,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Validation failed', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseBadRequest(): void
     {
         $response = $this->classThatImplementTheTrait->responseBadRequest('Invalid request', 'Bad request');
@@ -69,9 +65,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Invalid request', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseDeleted(): void
     {
         $response = $this->classThatImplementTheTrait->responseDeleted();
@@ -81,9 +75,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('{}', $response->getContent());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseNotFound(): void
     {
         $response = $this->classThatImplementTheTrait->responseNotFound('Resource not found', 'Not found');
@@ -94,9 +86,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Resource not found', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseUnAuthorized(): void
     {
         $response = $this->classThatImplementTheTrait->responseUnAuthorized('Unauthorized', 'Unauthorized access');
@@ -107,9 +97,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Unauthorized', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseUnAuthenticated(): void
     {
         $response = $this->classThatImplementTheTrait->responseUnAuthenticated('Unauthenticated', 'Authentication required');
@@ -120,9 +108,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Unauthenticated', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseConflictError(): void
     {
         $response = $this->classThatImplementTheTrait->responseConflictError('Conflict', 'Resource conflict');
@@ -133,9 +119,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals('Conflict', $responseData->errors[0]->detail);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseValidationError(): void
     {
         $validator = Validator::make([], [
@@ -163,9 +147,7 @@ class ApiResponseTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseAccepted(): void
     {
         $response = $this->classThatImplementTheTrait->responseAccepted('Processing started', ['job_id' => '123']);
@@ -177,9 +159,7 @@ class ApiResponseTest extends TestCase
         $this->assertEquals(['job_id' => '123'], (array) $responseData->data);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseAcceptedWithDefaults(): void
     {
         $response = $this->classThatImplementTheTrait->responseAccepted();
@@ -191,9 +171,7 @@ class ApiResponseTest extends TestCase
         $this->assertNull($responseData->data);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function responseNoContent(): void
     {
         $response = $this->classThatImplementTheTrait->responseNoContent();

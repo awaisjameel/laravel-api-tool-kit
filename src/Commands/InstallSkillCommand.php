@@ -36,7 +36,7 @@ class InstallSkillCommand extends Command
 
     public function handle(): int
     {
-        if ( ! $this->files->isDirectory($this->sourcePath())) {
+        if (! $this->files->isDirectory($this->sourcePath())) {
             $this->error('Skill source not found. Please reinstall essa/api-tool-kit.');
 
             return self::FAILURE;
@@ -49,6 +49,10 @@ class InstallSkillCommand extends Command
         $tool = $this->argument('tool') ?: $this->choice('Which AI coding tool are you using?', self::TOOLS);
 
         $this->newLine();
+        if (!is_string($tool)) {
+            $this->error('The tool name must be a string.');
+            return self::FAILURE;
+        }
 
         return match ($tool) {
             'Claude Code', 'claude' => $this->installForClaude(),
@@ -78,27 +82,24 @@ class InstallSkillCommand extends Command
         $rulesTarget  = '.claude/rules/laravel-api-tool-kit';
         $skillsTarget = '.claude/skills';
 
-        if ( ! $this->shouldProceed($rulesTarget)) {
+        if (! $this->shouldProceed($rulesTarget)) {
             return self::SUCCESS;
         }
 
         // 1. Copy SKILL.md (overview + project defaults) into rules dir
         $this->files->ensureDirectoryExists(base_path($rulesTarget));
-        $this->files->copy(
+        $this->copyFile(
             $this->sourcePath() . '/SKILL.md',
             base_path($rulesTarget . '/_overview.md')
         );
 
         // 2. Copy all rule files → .claude/rules/laravel-api-tool-kit/ (auto-loaded)
         foreach ($this->files->files($this->sourcePath() . '/rules') as $file) {
-            $this->files->copy($file->getPathname(), base_path($rulesTarget . '/' . $file->getFilename()));
+            $this->copyFile($file->getPathname(), base_path($rulesTarget . '/' . $file->getFilename()));
         }
 
         // 3. Copy knowledge template → .claude/knowledge/ (separate from rules)
-        $this->files->copyDirectory(
-            $this->sourcePath() . '/knowledge',
-            base_path('.claude/knowledge')
-        );
+        $this->copyKnowledge(base_path('.claude/knowledge'));
 
         // 4. Convert each workflow → a real Claude Code skill (native slash command)
         foreach ($this->files->files($this->sourcePath() . '/workflows') as $file) {
@@ -106,7 +107,7 @@ class InstallSkillCommand extends Command
             $skillDir  = base_path("{$skillsTarget}/{$skillName}");
 
             $this->files->ensureDirectoryExists($skillDir);
-            $this->files->put(
+            $this->writeManagedFile(
                 $skillDir . '/SKILL.md',
                 $this->buildClaudeSkill($skillName, $file->getContents())
             );
@@ -132,7 +133,7 @@ class InstallSkillCommand extends Command
         //   no globs, no always → Manual        (only when explicitly @mentioned)
         $target = '.cursor/rules/laravel-api-tool-kit';
 
-        if ( ! $this->shouldProceed($target)) {
+        if (! $this->shouldProceed($target)) {
             return self::SUCCESS;
         }
 
@@ -141,10 +142,7 @@ class InstallSkillCommand extends Command
         $this->copyAsMdc($this->sourcePath(), $targetPath);
 
         // Knowledge template → knowledge/ at project root (accessible to all tools)
-        $this->files->copyDirectory(
-            $this->sourcePath() . '/knowledge',
-            base_path('knowledge')
-        );
+        $this->copyKnowledge(base_path('knowledge'));
 
         $this->success($target, [
             'Core rules (SKILL, anti-patterns, code-quality) → <comment>Always Apply</comment> (every session)',
@@ -172,13 +170,10 @@ class InstallSkillCommand extends Command
         $this->smartUpdate(base_path($globalTarget), $this->compileCopilotGlobal());
 
         // PHP-specific rules → auto-attached on *.php files
-        $this->files->put(base_path($phpTarget), $this->compileCopilotPhpInstructions());
+        $this->writeManagedFile(base_path($phpTarget), $this->compileCopilotPhpInstructions());
 
         // Knowledge template → knowledge/ at project root (accessible to all tools)
-        $this->files->copyDirectory(
-            $this->sourcePath() . '/knowledge',
-            base_path('knowledge')
-        );
+        $this->copyKnowledge(base_path('knowledge'));
 
         $this->success('.github/', [
             'Always-on rules in <comment>.github/copilot-instructions.md</comment>',
@@ -208,17 +203,14 @@ class InstallSkillCommand extends Command
             $skillDir  = base_path("{$skillsTarget}/{$skillName}");
 
             $this->files->ensureDirectoryExists($skillDir);
-            $this->files->put(
+            $this->writeManagedFile(
                 $skillDir . '/SKILL.md',
                 $this->buildAgentSkill($skillName, $file->getContents())
             );
         }
 
         // 3. Knowledge template → .agent/knowledge/ (separate from skills)
-        $this->files->copyDirectory(
-            $this->sourcePath() . '/knowledge',
-            base_path('.agent/knowledge')
-        );
+        $this->copyKnowledge(base_path('.agent/knowledge'));
 
         $this->success("AGENTS.md + {$skillsTarget}/", [
             'Project rules compiled to <comment>AGENTS.md</comment> (auto-loaded by Antigravity v1.20.3+)',
@@ -240,7 +232,7 @@ class InstallSkillCommand extends Command
         foreach ($this->files->allFiles($sourcePath) as $file) {
             $nameWithoutExt = $file->getFilenameWithoutExtension();
             $relativePath   = $file->getRelativePathname();
-            $destRelative   = preg_replace('/\.md$/', '.mdc', $relativePath);
+            $destRelative   = preg_replace('/\.md$/', '.mdc', $relativePath) ?? throw new \RuntimeException('Invalid skill filename.');
             $destPath       = $targetPath . DIRECTORY_SEPARATOR . $destRelative;
             $isRule         = str_starts_with($file->getRelativePath(), 'rules');
 
@@ -259,7 +251,7 @@ class InstallSkillCommand extends Command
                 $frontmatter = "---\ndescription: Laravel API Toolkit - {$description}\nalwaysApply: false\n---\n\n";
             }
 
-            $this->files->put($destPath, $frontmatter . $file->getContents());
+            $this->writeManagedFile($destPath, $frontmatter . $file->getContents());
         }
     }
 
@@ -270,7 +262,7 @@ class InstallSkillCommand extends Command
 
         // SKILL.md first (strip YAML front matter)
         $skillContent = $this->files->get($sourcePath . '/SKILL.md');
-        $skillContent = preg_replace('/^---\n.*?---\n\n?/s', '', $skillContent);
+        $skillContent = preg_replace('/\A---\R.*?\R---\R*/s', '', $skillContent) ?? throw new \RuntimeException('Could not read skill frontmatter.');
         $sections[]   = trim($skillContent);
 
         // All rule files
@@ -293,7 +285,7 @@ class InstallSkillCommand extends Command
 
         // SKILL.md overview (strip YAML front matter)
         $skillContent = $this->files->get($sourcePath . '/SKILL.md');
-        $skillContent = preg_replace('/^---\n.*?---\n\n?/s', '', $skillContent);
+        $skillContent = preg_replace('/\A---\R.*?\R---\R*/s', '', $skillContent) ?? throw new \RuntimeException('Could not read skill frontmatter.');
         $sections[]   = trim($skillContent);
 
         // Core always-on rules only
@@ -313,7 +305,7 @@ class InstallSkillCommand extends Command
 
         // PHP-specific rules (all except the always-on ones already in global)
         foreach ($this->files->files($sourcePath . '/rules') as $file) {
-            if ( ! in_array($file->getFilenameWithoutExtension(), self::CURSOR_ALWAYS_APPLY, true)) {
+            if (! in_array($file->getFilenameWithoutExtension(), self::CURSOR_ALWAYS_APPLY, true)) {
                 $sections[] = trim($file->getContents());
             }
         }
@@ -325,14 +317,14 @@ class InstallSkillCommand extends Command
 
     private function buildClaudeSkill(string $name, string $content): string
     {
-        $description = $this->extractSkillDescription($content);
+        $description = json_encode($this->extractSkillDescription($content), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return "---\nname: {$name}\ndescription: {$description}\nuser-invocable: true\n---\n\n{$content}";
     }
 
     private function buildAgentSkill(string $name, string $content): string
     {
-        $description = $this->extractSkillDescription($content);
+        $description = json_encode($this->extractSkillDescription($content), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return "---\nname: {$name}\ndescription: {$description}\n---\n\n{$content}";
     }
@@ -368,8 +360,8 @@ class InstallSkillCommand extends Command
 
     private function smartUpdate(string $path, string $newContent): void
     {
-        if ( ! $this->files->exists($path)) {
-            $this->files->put($path, $this->wrapInMarkers($newContent));
+        if (! $this->files->exists($path)) {
+            $this->files->replace($path, $this->wrapInMarkers($newContent));
 
             return;
         }
@@ -382,12 +374,12 @@ class InstallSkillCommand extends Command
         $wrapped = $this->wrapInMarkers($newContent);
 
         if (preg_match($pattern, $existingContent)) {
-            $updatedContent = preg_replace($pattern, $wrapped, $existingContent);
+            $updatedContent = preg_replace_callback($pattern, static fn (): string => $wrapped, $existingContent) ?? throw new \RuntimeException('Could not update package instruction markers.');
         } else {
             $updatedContent = $existingContent . "\n\n" . $wrapped;
         }
 
-        $this->files->put($path, $updatedContent);
+        $this->files->replace($path, $updatedContent);
     }
 
     private function wrapInMarkers(string $content): string
@@ -401,7 +393,7 @@ class InstallSkillCommand extends Command
     {
         $path = base_path('CLAUDE.md');
 
-        if ( ! $this->files->exists($path)) {
+        if (! $this->files->exists($path)) {
             return;
         }
 
@@ -419,7 +411,7 @@ class InstallSkillCommand extends Command
 
     private function shouldProceed(string $target): bool
     {
-        if ( ! $this->files->isDirectory(base_path($target))) {
+        if (! $this->files->isDirectory(base_path($target))) {
             return true;
         }
 
@@ -427,7 +419,7 @@ class InstallSkillCommand extends Command
             return true;
         }
 
-        if ( ! $this->confirm("  Directory [<comment>{$target}</comment>] already exists. Overwrite?")) {
+        if (! $this->confirm("  Directory [<comment>{$target}</comment>] already exists. Overwrite?")) {
             $this->line('  Installation cancelled.');
 
             return false;
@@ -436,6 +428,7 @@ class InstallSkillCommand extends Command
         return true;
     }
 
+    /** @param list<string> $nextSteps */
     private function success(string $target, array $nextSteps): void
     {
         $this->line("  <info>✓</info> Installed to <comment>{$target}</comment>");
@@ -449,7 +442,32 @@ class InstallSkillCommand extends Command
         $this->newLine();
     }
 
-    private function sourcePath(): string
+    private function copyFile(string $source, string $destination): void
+    {
+        if (!$this->files->copy($source, $destination)) {
+            throw new \RuntimeException('Could not copy ' . $destination);
+        }
+    }
+
+    private function copyKnowledge(string $destination): void
+    {
+        foreach ($this->files->allFiles($this->sourcePath() . '/knowledge') as $file) {
+            $this->writeManagedFile($destination . '/' . $file->getRelativePathname(), $file->getContents());
+        }
+    }
+
+    private function writeManagedFile(string $path, string $content): void
+    {
+        $marker = '<!-- Managed by essa/api_tool_kit -->';
+        if ($this->files->exists($path) && !$this->option('force') && !str_contains($this->files->get($path), $marker)) {
+            $this->warn('Preserved existing file ' . $path . '. Use --force only after reviewing it.');
+            return;
+        }
+        $this->files->ensureDirectoryExists(dirname($path));
+        $this->files->replace($path, rtrim($content) . "\n\n" . $marker . "\n");
+    }
+
+    protected function sourcePath(): string
     {
         return __DIR__ . '/../../skills/laravel-api-tool-kit';
     }

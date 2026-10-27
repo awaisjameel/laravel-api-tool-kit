@@ -15,7 +15,7 @@ Models MUST NOT contain (god object = bad):
 
 ## Rules
 
-- MUST define `$fillable` explicitly — NEVER use `$guarded = []`
+- Preserve this fork's `protected $guarded = []` model policy. Persist validated, explicitly selected input; never pass raw request data to mass assignment. Do not replace it with a `$fillable` allowlist unless the application owner changes that policy.
 - MUST add `$casts` for all booleans, enums, arrays, and dates
 - MUST use `Filterable` trait and bind `$default_filters` for any model with a filterable endpoint
 - NEVER create a scope for a simple single-column condition — use `where()` directly
@@ -31,7 +31,7 @@ class Car extends Model
 
     protected string $default_filters = CarFilters::class;
 
-    protected $fillable = ['name', 'color', 'is_active', 'user_id'];
+    protected $guarded = [];
 
     protected $casts = [
         'is_active' => 'boolean',

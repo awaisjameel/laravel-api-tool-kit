@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Filters;
 
 use Essa\APIToolKit\Filters\DTO\FiltersDTO;
@@ -16,16 +18,22 @@ class QueryFilters
 {
     protected FiltersDTO $filtersDTO;
 
+    /** @var Builder<\Illuminate\Database\Eloquent\Model> */
     protected Builder $builder;
 
+    /** @var list<string> */
     protected array $allowedFilters = [];
 
+    /** @var list<string> */
     protected array $allowedSorts = [];
 
+    /** @var list<string> */
     protected array $allowedIncludes = [];
 
+    /** @var list<string> */
     protected array $columnSearch = [];
 
+    /** @var array<string, list<string>> */
     protected array $relationSearch = [];
 
     /**
@@ -40,7 +48,7 @@ class QueryFilters
     /**
      * Apply the query filters to the builder.
      *
-     * @return Builder
+     * @return Builder<\Illuminate\Database\Eloquent\Model>
      */
     public function apply(): Builder
     {
@@ -54,7 +62,7 @@ class QueryFilters
     /**
      * Get the underlying builder.
      *
-     * @return Builder
+     * @return Builder<\Illuminate\Database\Eloquent\Model>
      */
     public function getBuilder(): Builder
     {
@@ -64,7 +72,7 @@ class QueryFilters
     /**
      * Set the underlying builder.
      *
-     * @param  Builder  $builder
+     * @param Builder<\Illuminate\Database\Eloquent\Model> $builder
      * @return $this
      */
     public function setBuilder(Builder $builder): self
@@ -117,16 +125,22 @@ class QueryFilters
     protected function applyCustomFilters(): void
     {
         foreach ($this->getFiltersDTO()->getFilters() as $name => $value) {
-            if (method_exists($this, $name)) {
-                $this->{$name}($value);
+            if (!method_exists($this, $name)) {
+                continue;
             }
+            $method = new \ReflectionMethod($this, $name);
+            if (!$method->isPublic() || $method->isStatic() || $method->getDeclaringClass()->getName() === self::class
+                || $method->getNumberOfParameters() !== 1 || $method->getReturnType()?->__toString() !== 'void') {
+                continue;
+            }
+            $this->{$name}($value);
         }
     }
 
     /**
      * Process the filters pipeline.
      *
-     * @return Builder
+     * @return Builder<\Illuminate\Database\Eloquent\Model>
      */
     protected function processFiltersPipeline(): Builder
     {

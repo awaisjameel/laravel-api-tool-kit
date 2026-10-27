@@ -20,6 +20,7 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
         'request',
         'resource',
         'filter',
+        'factory',
     ];
 
     protected GeneratorFilesType $type;
@@ -39,9 +40,18 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
 
     abstract protected function getStubName(): string;
 
+    protected function modelNamespace(): string
+    {
+        $namespace = PathConfigHandler::generateFilePathInfo($this->apiGenerationCommandInputs->getPathGroup(), 'model', $this->apiGenerationCommandInputs->getModel())->getNamespace();
+        if ($namespace === null || $namespace === '') {
+            throw new \InvalidArgumentException('A generated model requires a namespace.');
+        }
+        return $namespace;
+    }
+
     protected function generateFiles(): void
     {
-        if ( ! file_exists($this->generatedFileInfo()->getFolderPath())) {
+        if (! file_exists($this->generatedFileInfo()->getFolderPath())) {
             $this->createFolder();
         }
 
@@ -62,7 +72,7 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
         $this->filesystem
             ->makeDirectory(
                 path: $this->generatedFileInfo()->getFolderPath(),
-                mode: 0777,
+                mode: 0755,
                 recursive: true,
                 force: true
             );
@@ -70,20 +80,22 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
 
     protected function saveContentToFile(): void
     {
-        file_put_contents(
-            filename: $this->generatedFileInfo()->getFullPath(),
-            data: $this->parseStub($this->getStubName())
-        );
+        $this->filesystem->replace($this->generatedFileInfo()->getFullPath(), $this->parseStub($this->getStubName()));
     }
 
     protected function parseStub(string $type): string
     {
         $output = $this->replacePatternsInTheStub($type);
 
-        return $this->removeTags($output);
+        $result = $this->removeTags($output);
+        $php = $this->type === GeneratorFilesType::ROUTES ? "<?php\n" . $result : $result;
+        if (!str_starts_with(ltrim($php), '<?php') || token_get_all($php, TOKEN_PARSE) === []) {
+            throw new \RuntimeException('The generator stub must produce valid PHP.');
+        }
+        return $result;
     }
 
-    protected function replacePatternsInTheStub(string $type): array|string|null
+    protected function replacePatternsInTheStub(string $type): string
     {
         $replacements = StubVariablesProvider::generate(
             modelName: $this->apiGenerationCommandInputs->getModel(),
@@ -107,7 +119,7 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
         foreach (self::TAGS as $option) {
             $processedContent = $this->extractConditionalBlock(
                 $processedContent,
-                $this->apiGenerationCommandInputs->getUserChoices()[$option],
+                $this->apiGenerationCommandInputs->isOptionSelected($option),
                 $option
             );
         }
@@ -119,10 +131,14 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
     {
         $pattern = "/@if\('{$tag}'\)(.*?)@endif\('{$tag}'\)/s";
 
-        return preg_replace_callback($pattern, function ($matches) use ($condition) {
+        $result = preg_replace_callback($pattern, function ($matches) use ($condition) {
             $parts = explode('@else', $matches[1], 2);
             return $condition ? trim($parts[0]) : (isset($parts[1]) ? trim($parts[1]) : '');
         }, $string);
+        if ($result === null) {
+            throw new \RuntimeException('Unable to process generator stub condition.');
+        }
+        return $result;
     }
 
     protected function getStubContent(string $stubName): string
@@ -130,9 +146,9 @@ abstract class GeneratorCommand implements GeneratorCommandInterface
         $customStubPath = base_path("stubs/api-tool-kit/{$stubName}.stub");
 
         if (file_exists($customStubPath)) {
-            return file_get_contents($customStubPath);
+            return $this->filesystem->get($customStubPath);
         }
 
-        return file_get_contents(__DIR__ . "/../../Stubs/{$stubName}.stub");
+        return $this->filesystem->get(__DIR__ . "/../../Stubs/{$stubName}.stub");
     }
 }

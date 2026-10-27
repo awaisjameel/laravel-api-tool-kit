@@ -14,6 +14,7 @@ use Essa\APIToolKit\Generator\Contracts\ConsoleTableInterface;
 use Essa\APIToolKit\Generator\SchemaDefinition;
 use Illuminate\Console\Command;
 use Illuminate\Container\Container;
+use Illuminate\Filesystem\Filesystem;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -23,6 +24,7 @@ class ApiGenerateCommand extends Command
 
     protected $description = 'This command generate api crud.';
 
+    /** @var list<string> */
     private array $reservedNames = [
         '__halt_compiler',
         'abstract',
@@ -94,35 +96,89 @@ class ApiGenerateCommand extends Command
         'yield',
     ];
 
-    public function __construct(private Container $container)
+    public function __construct(private readonly Container $container, private readonly Filesystem $files)
     {
         parent::__construct();
     }
 
     public function handle(): int
     {
-        $model = ucfirst($this->argument('model'));
-
-        if ($this->isReservedName($this->argument('model'))) {
-            $this->error('The name "' . $this->argument('model') . '" is reserved by PHP.');
+        $name = $this->argument('model');
+        $group = $this->option('group');
+        $schema = $this->argument('schema');
+        if (!is_string($name) || !is_string($group) || ($schema !== null && !is_string($schema))) {
+            $this->error('Model, group and schema must be strings.');
+            return self::FAILURE;
+        }
+        if ($this->isReservedName($name)) {
+            $this->error('The name "' . $name . '" is reserved by PHP.');
 
             return self::FAILURE;
         }
 
-        if ( ! PathConfigHandler::isValidPathGroup($this->option('group'))) {
+        if (preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/D', $name) !== 1) {
+            $this->error('The model must be a simple PHP class name.');
+            return self::FAILURE;
+        }
+        $model = ucfirst($name);
+        try {
+            $tokens = token_get_all('<?php class ' . $model . ' {}', TOKEN_PARSE);
+            if ($tokens === []) {
+                throw new \ParseError('Empty class definition.');
+            }
+        } catch (\ParseError) {
+            $this->error('The model name is not a valid PHP class name.');
+            return self::FAILURE;
+        }
+        if (! PathConfigHandler::isValidPathGroup($group)) {
             $this->error('The path group you entered is not valid');
 
             return self::FAILURE;
         }
 
-        $apiGenerationCommandInputs = new ApiGenerationCommandInputs(
-            model: $model,
-            userChoices: $this->getUserChoices(),
-            schema: SchemaDefinition::createFromSchemaString($this->argument('schema')),
-            pathGroup: $this->option('group')
-        );
+        $snapshots = [];
+        try {
+            $apiGenerationCommandInputs = new ApiGenerationCommandInputs(
+                model: $model,
+                userChoices: $this->getUserChoices(),
+                schema: SchemaDefinition::createFromSchemaString($schema),
+                pathGroup: $group
+            );
 
-        $this->executeCommands($apiGenerationCommandInputs);
+            foreach (CommandConfigHandler::getAllCommands() as $type => $class) {
+                if (!$apiGenerationCommandInputs->isOptionSelected($type)) {
+                    continue;
+                }
+                $path = PathConfigHandler::generateFilePathInfo($group, $type, $model)->getFullPath();
+                if (is_link($path) || (file_exists($path) && (!is_file($path) || ($type !== GeneratorFilesType::ROUTES->value && !$this->option('force'))))) {
+                    $this->error('Refusing to overwrite ' . $path . '. Review the destination or use --force for existing files.');
+                    return self::FAILURE;
+                }
+                $snapshots[$path] = is_file($path) ? $this->files->get($path) : null;
+            }
+
+            $this->executeCommands($apiGenerationCommandInputs);
+        } catch (\Throwable $exception) {
+            $rollbackErrors = [];
+            foreach ($snapshots as $path => $content) {
+                try {
+                    if ($content === null) {
+                        if ($this->files->exists($path) && !$this->files->delete($path)) {
+                            throw new \RuntimeException('Unable to remove the partial output.');
+                        }
+                    } else {
+                        $this->files->replace($path, $content);
+                    }
+                } catch (\Throwable $rollbackException) {
+                    $rollbackErrors[] = 'Rollback failed for ' . $path . ': ' . $rollbackException->getMessage();
+                }
+            }
+            $this->error('API generation failed: ' . $exception->getMessage());
+            foreach ($rollbackErrors as $error) {
+                $this->error($error);
+            }
+            return self::FAILURE;
+        }
 
         $this->info('Here is your schema : ');
 
@@ -147,6 +203,7 @@ class ApiGenerateCommand extends Command
     {
         return [
             ['all', null, InputOption::VALUE_NONE, 'Generate a migration, seeder, factory, policy, resource controller, and form request classes for the model'],
+            ['force', null, InputOption::VALUE_NONE, 'Overwrite selected existing generated files'],
             ['routes', null, InputOption::VALUE_NONE, 'Generate routes for the crud operations'],
             ['soft-delete', null, InputOption::VALUE_NONE, 'Generate soft delete functionality for the model'],
             ['controller', 'c', InputOption::VALUE_NONE, 'Create a new controller for the model'],
@@ -161,6 +218,9 @@ class ApiGenerateCommand extends Command
         ];
     }
 
+    /**
+     * @return array<string, bool>
+     */
     private function getUserChoices(): array
     {
         if ($this->option('all')) {
@@ -173,7 +233,13 @@ class ApiGenerateCommand extends Command
             'model' => true,
         ];
 
-        return $this->options() + $extraOptions;
+        $options = [];
+        foreach ($this->options() as $key => $value) {
+            if (is_bool($value)) {
+                $options[$key] = $value;
+            }
+        }
+        return $options + array_map(static fn ($value): bool => $value === true, $extraOptions);
     }
 
     private function setDefaultOptions(): void

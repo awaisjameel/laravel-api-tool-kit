@@ -6,10 +6,14 @@ namespace Essa\APIToolKit\Generator\Helpers;
 
 use Essa\APIToolKit\Generator\Configs\PathConfigHandler;
 use Essa\APIToolKit\Generator\GeneratedFileInfo;
+use Essa\APIToolKit\Generator\ModelNaming;
 use Illuminate\Support\Str;
 
 class StubVariablesProvider
 {
+    /**
+     * @return array<string, string>
+     */
     public static function generate(string $modelName, string $pathGroup): array
     {
         $configForPathGroup = PathConfigHandler::getFileInfoForAllTypes(
@@ -28,9 +32,13 @@ class StubVariablesProvider
         return $replacements + self::generateBasicReplacements($modelName) + $baseUrlPrefix;
     }
 
+    /**
+     * @return array<string, string>
+     */
     private static function generateReplacementsForType(string $type, GeneratedFileInfo $generatedFileInfo): array
     {
-        if (!$generatedFileInfo->shouldSaveAsSeparateClass()) {
+        $namespace = $generatedFileInfo->getNamespace();
+        if ($namespace === null || $namespace === '') {
             return [];
         }
 
@@ -38,15 +46,18 @@ class StubVariablesProvider
 
         return [
             "{{Dummy{$type}}}" => $generatedFileInfo->getClassName(),
-            "{{Dummy{$type}NameSpace}}" => $generatedFileInfo->getNameSpace(),
-            "{{Dummy{$type}WithNameSpace}}" => $generatedFileInfo->getNameSpace() . '\\' . $generatedFileInfo->getClassName(),
+            "{{Dummy{$type}NameSpace}}" => $namespace,
+            "{{Dummy{$type}WithNameSpace}}" => $namespace . '\\' . $generatedFileInfo->getClassName(),
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
     private static function generateBasicReplacements(string $modelName): array
     {
-        $tableName = Str::snake(Str::pluralStudly($modelName));
-        $routeName = Str::kebab(Str::plural($modelName));
+        $tableName = ModelNaming::tableName($modelName);
+        $routeName = ModelNaming::routeName($modelName);
         return [
             '{{Dummy}}' => $modelName,
             '{{Dummies}}' => Str::plural($modelName),
@@ -57,6 +68,9 @@ class StubVariablesProvider
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
     private static function getBaseUrlPrefix(string $pathGroupName): array
     {
         return [

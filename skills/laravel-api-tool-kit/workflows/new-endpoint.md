@@ -44,7 +44,7 @@ ls app/
 
 Follow `rules/models.md` for the correct structure.
 
-- Add all columns to `$fillable`
+- Keep `protected $guarded = []` as required by this fork; restrict writes to validated input and review sensitive attributes explicitly
 - Add `$casts` for booleans, enums, and arrays
 - Add `SoftDeletes` if needed
 - Add relationships
@@ -253,7 +253,7 @@ Write a feature test covering index, store, show, update, destroy.
 
 Before marking the feature done, verify (paths per Step 0 path map):
 
-- [ ] `$fillable` is populated
+- [ ] The fork's unguarded model policy is preserved and writes use validated, explicitly selected input
 - [ ] `$casts` covers all booleans and enums
 - [ ] Filter class has meaningful `$allowedFilters` and `$allowedSorts`
 - [ ] All controller methods use `$request->validated()`

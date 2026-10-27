@@ -16,6 +16,8 @@ Controllers receive HTTP requests, delegate to the appropriate layer, and return
 
 ## Standard CRUD
 
+These application examples assume the base controller includes `Illuminate\Foundation\Auth\Access\AuthorizesRequests` and `Essa\APIToolKit\Api\ApiResponse`. Laravel's plain application controller does not provide these helpers automatically. Generated package controllers include `ApiResponse` themselves; add authorization policies deliberately.
+
 ```php
 class CarController extends Controller
 {
@@ -71,7 +73,7 @@ class CarController extends Controller
 
 ## Middleware
 
-Apply middleware at the route level (preferred in Laravel 11+, required in Laravel 12 — constructor middleware was deprecated):
+Apply middleware at the route level, or implement Laravel's `Illuminate\Routing\Controllers\HasMiddleware` interface with its static `middleware()` method. Instance constructor middleware also remains supported when the base extends `Illuminate\Routing\Controller`; it is not provided by a plain application controller. The package's existing `HasPermissions` trait uses that instance API. Choose one controller architecture consistently.
 
 ```php
 // routes/api.php

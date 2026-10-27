@@ -6,7 +6,8 @@ namespace {{DummyActionNamespace}};
 
 class {{DummyAction}}
 {
-    public function execute(array $data)
+    /** @param array<string, mixed> $data */
+    public function execute(array $data): void
     {
 
     }

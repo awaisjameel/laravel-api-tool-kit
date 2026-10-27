@@ -86,7 +86,7 @@ Work through each section. Flag every violation.
 - [ ] Sensitive routes have `throttle` middleware
 
 ### 3.4 Models
-- [ ] `$fillable` explicitly defined — no `$guarded = []`
+- [ ] The fork's `protected $guarded = []` policy is preserved; mass assignment receives validated, explicitly selected fields
 - [ ] `$casts` covers booleans, enums, arrays, dates
 - [ ] `Filterable` trait and `$default_filters` bound for filterable models
 - [ ] ULID models have `HasUlids` trait + `$keyType = 'string'` + `$incrementing = false`

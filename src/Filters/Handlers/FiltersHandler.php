@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Filters\Handlers;
 
 use Closure;
@@ -15,7 +17,11 @@ class FiltersHandler implements QueryFiltersHandlerInterface
         $builder = $queryFiltersOptionsDTO->getBuilder();
 
         foreach ($filters as $name => $value) {
-            if (in_array($name, $allowedFilters)) {
+            if (in_array($name, $allowedFilters, true)) {
+                if ($value === null) {
+                    $builder->whereNull($name);
+                    continue;
+                }
                 $value = explode(',', $value);
 
                 if (count($value) > 1) {

@@ -5,7 +5,7 @@
 - MUST create a `QueryFilters` subclass for every filterable model
 - MUST bind it to the model via `protected string $default_filters`
 - MUST use `useFilters()->dynamicPaginate()` on index endpoints — NEVER build query conditions in controllers
-- Custom filter methods MUST operate on `$this->builder` and return `void`
+- Custom filter methods MUST be public, non-static, accept one argument, operate on `$this->builder` and return `void`; keep other helpers protected/private. Base infrastructure methods are not query hooks.
 - NEVER hardcode `auth()->id()` inside a scope called from a filter method
 
 ## Model Binding

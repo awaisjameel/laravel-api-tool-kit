@@ -2,11 +2,11 @@
 
 namespace Essa\APIToolKit\Tests;
 
+use PHPUnit\Framework\Attributes\Test;
+
 class ActionTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function generateActionClass(): void
     {
         $name = 'TestAction';

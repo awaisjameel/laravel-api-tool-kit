@@ -5,12 +5,11 @@ namespace Essa\APIToolKit\Tests;
 use Carbon\Carbon;
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Test;
 
 class TimeFilterTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function useTimeFilterToFilterFromTime(): void
     {
         TestModel::factory(5)->create([
@@ -29,9 +28,7 @@ class TimeFilterTest extends TestCase
         $this->assertCount(3, $records);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useTimeFilterToFilterToTime(): void
     {
         TestModel::factory(5)->create([
@@ -50,9 +47,7 @@ class TimeFilterTest extends TestCase
         $this->assertCount(5, $records);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useTimeFilterWithBothFromAndToTime(): void
     {
         TestModel::factory(5)->create([

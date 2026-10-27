@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Guessers;
 
 use Essa\APIToolKit\Generator\ColumnDefinition;
 use Essa\APIToolKit\Generator\Contracts\GuesserInterface;
+use Essa\APIToolKit\Generator\Helpers\PhpLiteral;
 
 class FactoryMethodGuesserInterface implements GuesserInterface
 {
@@ -41,7 +44,7 @@ class FactoryMethodGuesserInterface implements GuesserInterface
 
     private function getEnumFactoryMethod(): string
     {
-        $enumValuesString = "'" . implode("', '", $this->definition->getEnumValues()) . "'";
+        $enumValuesString = PhpLiteral::stringList($this->definition->getEnumValues());
 
         return "randomElement([{$enumValuesString}])";
     }

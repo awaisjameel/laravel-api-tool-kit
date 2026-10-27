@@ -6,6 +6,9 @@ namespace Essa\APIToolKit\Generator;
 
 class ApiGenerationCommandInputs
 {
+    /**
+     * @param array<string, bool> $userChoices
+     */
     public function __construct(
         private string $model,
         private array $userChoices,
@@ -19,6 +22,9 @@ class ApiGenerationCommandInputs
         return $this->model;
     }
 
+    /**
+     * @return array<string, bool>
+     */
     public function getUserChoices(): array
     {
         return $this->userChoices;
@@ -31,7 +37,7 @@ class ApiGenerationCommandInputs
 
     public function isOptionSelected(string $option): bool
     {
-        return $this->userChoices[$option];
+        return $this->userChoices[$option] ?? false;
     }
 
     public function getPathGroup(): string

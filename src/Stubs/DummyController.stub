@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace {{DummyControllerNameSpace}};
 
 use App\Http\Controllers\Controller;
+use Essa\APIToolKit\Api\ApiResponse;
 @if('request')
 use {{DummyUpdateRequestWithNameSpace}};
 use {{DummyCreateRequestWithNameSpace}};
@@ -14,16 +15,14 @@ use Illuminate\Http\Request;
 @if('resource')use {{DummyResourceWithNameSpace}};@endif('resource')
 use {{DummyModelWithNameSpace}};
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+@if('resource')use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+@else use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;@endif('resource')
 
 class {{DummyController}} extends Controller
 {
-    public function __construct()
-    {
-
-    }
-
-    public function index()@if('resource'): AnonymousResourceCollection @endif('resource')
+    use ApiResponse;
+    public function index(): @if('resource')AnonymousResourceCollection@else Collection|LengthAwarePaginator@endif('resource')
     {
         ${{dummies}} = {{DummyModel}}::@if('filter')useFilters()->@endif('filter')dynamicPaginate();
 
@@ -32,7 +31,10 @@ class {{DummyController}} extends Controller
 
     public function store(@if('request'){{DummyCreateRequest}} @else Request @endif('request') $request): JsonResponse
     {
-        ${{dummy}} = {{DummyModel}}::create($request->validated());
+        $data = @if('request')$request->validated()@else $request->validate([
+            {{createValidationRules}}
+        ])@endif('request');
+        ${{dummy}} = {{DummyModel}}::create($data);
 
         return $this->responseCreated('{{Dummy}} created successfully', @if('resource')new {{DummyResource}}(@endif('resource')${{dummy}}@if('resource'))@endif('resource'));
     }
@@ -44,7 +46,10 @@ class {{DummyController}} extends Controller
 
     public function update(@if('request'){{DummyUpdateRequest}} @else Request @endif('request') $request, {{DummyModel}} ${{dummy}}): JsonResponse
     {
-        ${{dummy}}->update($request->validated());
+        $data = @if('request')$request->validated()@else $request->validate([
+            {{updateValidationRules}}
+        ])@endif('request');
+        ${{dummy}}->update($data);
 
         return $this->responseSuccess('{{Dummy}} updated Successfully', @if('resource')new {{DummyResource}}(@endif('resource')${{dummy}}@if('resource'))@endif('resource'));
     }
@@ -56,7 +61,7 @@ class {{DummyController}} extends Controller
         return $this->responseDeleted();
     }
 
-   @if('soft-delete') public function restore($id): JsonResponse
+   @if('soft-delete') public function restore(int|string $id): JsonResponse
     {
         ${{dummy}} = {{DummyModel}}::onlyTrashed()->findOrFail($id);
 
@@ -65,7 +70,7 @@ class {{DummyController}} extends Controller
         return $this->responseSuccess('{{Dummy}} restored Successfully.');
     }
 
-    public function permanentDelete($id): JsonResponse
+    public function permanentDelete(int|string $id): JsonResponse
     {
         ${{dummy}} = {{DummyModel}}::withTrashed()->findOrFail($id);
 

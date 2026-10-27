@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\ConsoleTable;
 
 use Essa\APIToolKit\Generator\ApiGenerationCommandInputs;
@@ -18,6 +20,9 @@ class GeneratedFilesConsoleTable implements ConsoleTableInterface
         return new TableDate($headers, $tableData);
     }
 
+    /**
+     * @return list<list<string>>
+     */
     private function generateTableData(ApiGenerationCommandInputs $apiGenerationCommandInputs): array
     {
         $configForPathGroup = PathConfigHandler::getFileInfoForAllTypes(

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -8,18 +10,19 @@ use Illuminate\Support\Str;
 
 /**
  * @method static findBySlug($slug)
+ * @phpstan-require-extends Model
  */
 trait Sluggable
 {
     protected static function bootSluggable(): void
     {
-        static::creating(function (Model $model): void {
+        static::creating(function (self $model): void {
             if ($model->enableSluggableInCreating()) {
                 $model->generateSlug();
             }
         });
 
-        static::updating(function (Model $model): void {
+        static::updating(function (self $model): void {
             if ($model->enableSluggableInUpdating()) {
                 $model->generateSlug();
             }
@@ -28,7 +31,9 @@ trait Sluggable
 
     /**
      * find model by slug.
-     */
+     *
+     * @param Builder<static> $query
+     * @return static */
     public function scopeFindBySlug(Builder $query, string $slug): Model
     {
         return $query->where($this->getSlugFieldName(), $slug)->firstOrFail();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\SchemaParsers;
 
 use Essa\APIToolKit\Generator\ColumnDefinition;

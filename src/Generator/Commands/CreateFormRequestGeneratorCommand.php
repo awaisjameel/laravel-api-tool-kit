@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Commands;
 
 use Essa\APIToolKit\Enum\GeneratorFilesType;
@@ -10,6 +12,9 @@ class CreateFormRequestGeneratorCommand extends GeneratorCommand implements HasD
 {
     protected GeneratorFilesType $type = GeneratorFilesType::CREATE_REQUEST;
 
+    /**
+     * @return array<string, string>
+     */
     public function getContent(): array
     {
         return [

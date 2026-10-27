@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\SchemaParsers;
 
 use Essa\APIToolKit\Generator\ColumnDefinition;
@@ -9,6 +11,10 @@ use Illuminate\Support\Str;
 
 class FactoryColumnsParser extends SchemaParser
 {
+    public function __construct(SchemaDefinition $schema, private readonly string $modelNamespace = 'App\\Models')
+    {
+        parent::__construct($schema);
+    }
     protected function getParsedSchema(SchemaDefinition $schemaDefinition): string
     {
         return collect($schemaDefinition->getColumns())
@@ -37,6 +43,6 @@ class FactoryColumnsParser extends SchemaParser
     {
         $relatedModel = Str::studly(Str::beforeLast($definition->getName(), '_id'));
 
-        return "createOrRandomFactory(\App\Models\\{$relatedModel}::class)";
+        return "createOrRandomFactory(\\{$this->modelNamespace}\\{$relatedModel}::class)";
     }
 }

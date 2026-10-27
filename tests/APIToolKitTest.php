@@ -6,12 +6,13 @@ use Essa\APIToolKit\Api\ApiResponse;
 use Essa\APIToolKit\APIToolKit;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler;
+use PHPUnit\Framework\Attributes\Test;
 
 class APIToolKitTest extends TestCase
 {
     use ApiResponse;
 
-    /** @test */
+    #[Test]
     public function registerExceptionRenderersDoesNotThrow(): void
     {
         $exceptions = $this->createExceptionsConfig();
@@ -21,7 +22,7 @@ class APIToolKitTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /** @test */
+    #[Test]
     public function itRegistersAuthenticationExceptionRenderer(): void
     {
         $response = $this->responseUnAuthenticated('Unauthenticated.');
@@ -33,7 +34,7 @@ class APIToolKitTest extends TestCase
         $this->assertSame('Unauthenticated.', $responseData['errors'][0]['detail']);
     }
 
-    /** @test */
+    #[Test]
     public function itRegistersAuthorizationExceptionRenderer(): void
     {
         $response = $this->responseUnAuthorized();
@@ -43,7 +44,7 @@ class APIToolKitTest extends TestCase
         $this->assertSame('Unauthorized!', $responseData['errors'][0]['title']);
     }
 
-    /** @test */
+    #[Test]
     public function itRegistersNotFoundExceptionRenderer(): void
     {
         $response = $this->responseNotFound('Route not found.');
@@ -53,7 +54,7 @@ class APIToolKitTest extends TestCase
         $this->assertSame('Route not found.', $responseData['errors'][0]['detail']);
     }
 
-    /** @test */
+    #[Test]
     public function itRegistersThrottleExceptionRenderer(): void
     {
         $response = $this->responseWithCustomError(

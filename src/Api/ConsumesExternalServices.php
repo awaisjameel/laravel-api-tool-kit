@@ -14,8 +14,8 @@ trait ConsumesExternalServices
      *
      * @param string $method HTTP method (GET, POST, etc.)
      * @param string $requestUrl The URL for the request
-     * @param array $data Data to send in the request
-     * @param array $headers Headers to include
+     * @param array<string, mixed> $data Data to send in the request
+     * @param array<string, string|list<string>> $headers Headers to include
      * @param bool $isJsonRequest Whether to send as JSON
      *
      * @return mixed The response data (decoded JSON or raw body)
@@ -29,6 +29,7 @@ trait ConsumesExternalServices
     ): mixed {
         $request = Http::baseUrl($this->baseUri)
             ->withHeaders($headers)
+            ->withoutRedirecting()
             ->timeout($this->timeout ?? 30)
             ->connectTimeout($this->connectTimeout ?? 10);
 
@@ -36,14 +37,19 @@ trait ConsumesExternalServices
             $request->retry($this->retries, $this->retryDelay ?? 100);
         }
 
-        if (method_exists($this, 'resolveAuthorization')) {
-            $request = $this->resolveAuthorization($request);
+        $request = $this->resolveAuthorization($request);
+
+        $method = strtoupper($method);
+        if (! in_array($method, ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], true)) {
+            throw new \InvalidArgumentException('Unsupported HTTP method.');
         }
+        if (! $isJsonRequest) {
+            $request = $request->asForm();
+        }
+        $options = in_array($method, ['GET', 'HEAD'], true) ? ['query' => $data] : [$isJsonRequest ? 'json' : 'form_params' => $data];
+        $response = $request->send($method, $requestUrl, $options);
 
-        /** @var Response $response */
-        $response = $request->{mb_strtolower($method)}($requestUrl, $data);
-
-        if ($response->failed()) {
+        if (! $response->successful()) {
             return $this->handleRequestError($response);
         }
 
@@ -56,6 +62,12 @@ trait ConsumesExternalServices
      */
     protected function handleRequestError(Response $response): mixed
     {
-        return $response->throw();
+        $response->throw();
+        throw new \UnexpectedValueException('External service returned an unexpected HTTP status: ' . $response->status());
+    }
+
+    protected function resolveAuthorization(\Illuminate\Http\Client\PendingRequest $request): \Illuminate\Http\Client\PendingRequest
+    {
+        return $request;
     }
 }

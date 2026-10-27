@@ -6,14 +6,15 @@ use Essa\APIToolKit\MediaHelper;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
 
 class MediaHelperTest extends TestCase
 {
-    public const BASE_64_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/w8AAwAB/AL+f4R4AAAAASUVORK5CYII=';
+    public const BASE_64_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
     private string $testingImage = __DIR__ . '/Images/laravel-api-tool-kit.png';
 
-    /** @test */
+    #[Test]
     public function itUploadsFile(): void
     {
         Storage::fake('public');
@@ -29,7 +30,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsFileWithoutDisk(): void
     {
         $disk = 'public';
@@ -46,7 +47,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsFileWithOriginalName(): void
     {
         Storage::fake('public');
@@ -63,7 +64,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/test1.jpg');
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsFileWithOriginalNameWithoutDisk(): void
     {
         $disk = 'public';
@@ -81,7 +82,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/test1.jpg');
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsFileWithCustomName(): void
     {
         Storage::fake('public');
@@ -100,7 +101,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/' . $customFileName);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsFileWithCustomNameWithoutDisk(): void
     {
         $disk = 'public';
@@ -121,7 +122,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/' . $customFileName);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsMultipleFiles(): void
     {
         Storage::fake('public');
@@ -142,7 +143,7 @@ class MediaHelperTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsMultipleFilesWithoutDisk(): void
     {
         $disk = 'public';
@@ -165,7 +166,7 @@ class MediaHelperTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsMultipleFilesWithCustomNames(): void
     {
         Storage::fake('public');
@@ -191,7 +192,7 @@ class MediaHelperTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsMultipleFilesWithCustomNamesWithoutDisk(): void
     {
         $disk = 'public';
@@ -218,7 +219,7 @@ class MediaHelperTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsBase64Image(): void
     {
         Storage::fake('public');
@@ -234,7 +235,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsBase64ImageWithoutDisk(): void
     {
         $disk = 'public';
@@ -251,7 +252,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsBase64ImageWithCustomName(): void
     {
         Storage::fake('public');
@@ -270,7 +271,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/' . $customFileName);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsBase64ImageWithCustomNameWithoutDisk(): void
     {
         $disk = 'public';
@@ -290,7 +291,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertExists($path . '/' . $customFileName);
     }
 
-    /** @test */
+    #[Test]
     public function itDeletesFile(): void
     {
         Storage::fake('public');
@@ -308,7 +309,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertMissing($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itDeletesFileWithoutDisk(): void
     {
         $disk = 'public';
@@ -327,7 +328,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertMissing($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itGetsFileFullPath(): void
     {
         Storage::fake('public');
@@ -345,7 +346,7 @@ class MediaHelperTest extends TestCase
         $this->assertEquals(Storage::disk($disk)->url($uploadedPath), $fullPath);
     }
 
-    /** @test */
+    #[Test]
     public function itGetsFileFullPathWithoutDisk(): void
     {
         $disk = 'public';
@@ -364,7 +365,7 @@ class MediaHelperTest extends TestCase
         $this->assertEquals(Storage::disk($disk)->url($uploadedPath), $fullPath);
     }
 
-    /** @test */
+    #[Test]
     public function itGetsNullFileFullPathForNullFilePath(): void
     {
         $disk = 'public';
@@ -377,7 +378,7 @@ class MediaHelperTest extends TestCase
         $this->assertNull($fileFullPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsAndDeletesBase64Images(): void
     {
         Storage::fake('public');
@@ -392,7 +393,7 @@ class MediaHelperTest extends TestCase
         Storage::disk($disk)->assertMissing($uploadedPath);
     }
 
-    /** @test */
+    #[Test]
     public function itUploadsAndDeletesBase64ImagesWithoutDisk(): void
     {
         $disk = 'public';

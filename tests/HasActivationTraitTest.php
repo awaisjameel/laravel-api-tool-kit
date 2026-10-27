@@ -3,12 +3,11 @@
 namespace Essa\APIToolKit\Tests;
 
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
+use PHPUnit\Framework\Attributes\Test;
 
 class HasActivationTraitTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function activeScopeReturnsOnlyActiveRecords(): void
     {
         TestModel::factory(3)->create([
@@ -24,9 +23,7 @@ class HasActivationTraitTest extends TestCase
         $this->assertCount(3, $activeRecords);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function toggleActivationChangesStatus(): void
     {
         $model = TestModel::factory()->create([

@@ -20,6 +20,8 @@ class APIToolKitServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit.php', 'api-tool-kit');
+        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit-internal.php', 'api-tool-kit-internal');
     }
 
     public function boot(): void
@@ -33,10 +35,6 @@ class APIToolKitServiceProvider extends ServiceProvider
 
     private function AddConfigFiles(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit.php', 'api-tool-kit');
-
-        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit-internal.php', 'api-tool-kit-internal');
-
         if ($this->app->runningInConsole() && function_exists('config_path')) {
             $this->publishes([
                 __DIR__ . '/../config/api-tool-kit.php' => config_path('api-tool-kit.php'),
