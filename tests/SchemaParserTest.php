@@ -11,6 +11,8 @@ use Essa\APIToolKit\Generator\SchemaParsers\MigrationContentParser;
 use Essa\APIToolKit\Generator\SchemaParsers\RelationshipMethodsParser;
 use Essa\APIToolKit\Generator\SchemaParsers\ResourceAttributesParser;
 use Essa\APIToolKit\Generator\SchemaParsers\UpdateValidationRulesParser;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
 class SchemaParserTest extends TestCase
 {
@@ -19,7 +21,7 @@ class SchemaParserTest extends TestCase
         return [
             ['column1:string|column2:integer|column3:datetime', true],
             ['COLUMN1:string|COLUMN2:int', true],
-            ['COLUMN1:string|COLUMN2:int,COLUMN3:varchar(255)', true],
+            ['COLUMN1:string|COLUMN2:int,COLUMN3:varchar(255)', false],
             ['COLUMN1:string', true],
             ["COLUMN1:int|COLUMN2:decimal(10,2)|COLUMN3:varchar(255):default('a')", true],
             ['COLUMN_NAME::OPTIONS', false], // Empty COLUMN_TYPE
@@ -30,9 +32,7 @@ class SchemaParserTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function GenerateFillableColumns(): void
     {
         $schema = 'name:string|age:integer|email:string:unique|status:enum(approved,rejected)';
@@ -52,9 +52,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesMigrationContent(): void
     {
         $schema = 'name:string|age:integer';
@@ -72,9 +70,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function GenerateRelationshipMethod(): void
     {
         $schema = 'author_id:foreignId|category_id:foreignId';
@@ -98,9 +94,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesFactoryColumns(): void
     {
         $schema = 'name:string|age:integer|price:decimal|user_id:foreignId|status:enum(approved,rejected)';
@@ -121,9 +115,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesColumnDefinitions(): void
     {
         $schema = 'name:string|age:integer|price:decimal|status:enum(approved,rejected)';
@@ -143,9 +135,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesResourceAttributes(): void
     {
         $schema = 'name:string|age:integer|price:decimal|opened_at:datetime|status:enum(approved,rejected)';
@@ -166,9 +156,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesCreateValidationRules(): void
     {
         $schema = 'name:string:nullable|age:integer|price:decimal|status:enum(approved,rejected)';
@@ -188,9 +176,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesUpdateValidationRules(): void
     {
         $schema = 'email:string|age:integer|price:decimal';
@@ -209,9 +195,7 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function ParseGeneratesForeignKeyWithCascadeOption(): void
     {
         $schema = 'author_id:foreignId:cascadeOnDelete';
@@ -228,10 +212,8 @@ class SchemaParserTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider schemasProvider
-     * @test
-     */
+    #[Test]
+    #[DataProvider('schemasProvider')]
     public function ValidateSchema($schema, $isValid): void
     {
         if ($isValid) {

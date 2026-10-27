@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Commands;
 
 use Essa\APIToolKit\Enum\GeneratorFilesType;
 
 class TestGeneratorCommand extends GeneratorCommand
 {
-    protected string $type = GeneratorFilesType::TEST;
+    protected GeneratorFilesType $type = GeneratorFilesType::TEST;
 
     protected function getStubName(): string
     {

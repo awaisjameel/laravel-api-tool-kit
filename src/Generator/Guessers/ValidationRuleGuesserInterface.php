@@ -1,12 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Guessers;
 
 use Essa\APIToolKit\Generator\ColumnDefinition;
 use Essa\APIToolKit\Generator\Contracts\GuesserInterface;
+use Essa\APIToolKit\Generator\Helpers\PhpLiteral;
 
 class ValidationRuleGuesserInterface implements GuesserInterface
 {
+    /**
+     * @param list<string> $extraValidation
+     */
     public function __construct(private ColumnDefinition $definition, private array $extraValidation)
     {
     }
@@ -63,20 +69,18 @@ class ValidationRuleGuesserInterface implements GuesserInterface
             $rules[] = 'json';
         }
 
-        return "'" . implode("', '", $rules) . "'";
+        return PhpLiteral::stringList($rules);
     }
 
-    private function shouldAddNullableRule(): bool
-    {
-        return in_array('nullable', $this->definition->getOptions()) && $this->extraValidation === ['required'];
-    }
-
+    /**
+     * @return list<string>
+     */
     private function addExtraValidationToTheRules(): array
     {
-        if ( ! $this->shouldAddNullableRule()) {
+        if (!in_array('nullable', $this->definition->getOptions(), true)) {
             return $this->extraValidation;
         }
 
-        return ['nullable'];
+        return $this->extraValidation === ['required'] ? ['nullable'] : [...$this->extraValidation, 'nullable'];
     }
 }

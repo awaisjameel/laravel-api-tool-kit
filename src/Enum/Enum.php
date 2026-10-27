@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Enum;
 
-use ReflectionClass;
 use Illuminate\Contracts\Database\Eloquent\Castable;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Database\Eloquent\Model;
+use ReflectionClass;
 
 /**
- * Base Enum class extended to support direct usage in Laravel model casts.
+ * Legacy constant enum retained for the fork's Eloquent casts. Prefer backed enums for new code.
  *
  * Example (in a model casts array):
  *   'platform_name' => \App\Enums\Product\PricePlatform::class,
@@ -21,7 +24,7 @@ abstract class Enum implements Castable
     /**
      * Get the values of every constant in the enum.
      *
-     * @return array
+     * @return list<mixed>
      */
     final public static function getAll(): array
     {
@@ -31,7 +34,7 @@ abstract class Enum implements Castable
     /**
      * Convert the enum to an associative array of constant names and values.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     final public static function toArray(): array
     {
@@ -41,7 +44,7 @@ abstract class Enum implements Castable
     /**
      * Get the constant names of the enum.
      *
-     * @return array
+     * @return list<string>
      */
     final public static function getConst(): array
     {
@@ -56,7 +59,7 @@ abstract class Enum implements Castable
      */
     final public static function isValid(mixed $value): bool
     {
-        return in_array($value, static::toArray());
+        return in_array($value, static::toArray(), true);
     }
 
     /**
@@ -67,7 +70,7 @@ abstract class Enum implements Castable
      */
     final public static function isValidConst(mixed $value): bool
     {
-        return in_array($value, static::getConst());
+        return in_array($value, static::getConst(), true);
     }
 
     /**
@@ -83,21 +86,30 @@ abstract class Enum implements Castable
 
     /**
      * Enable direct casting via Eloquent by returning a caster instance.
-     */
-    public static function castUsing(array $arguments)
+     *
+     * @param array<array-key, mixed> $arguments
+     * @return CastsAttributes<mixed, mixed> */
+    public static function castUsing(array $arguments): CastsAttributes
     {
         $enumClass = static::class;
 
-        return new class($enumClass) implements CastsAttributes {
-            public function __construct(private string $enumClass) {}
+        /** @implements CastsAttributes<mixed, mixed> */
+        return new class ($enumClass) implements CastsAttributes {
+            /** @param class-string<Enum> $enumClass */
+            public function __construct(private string $enumClass)
+            {
+            }
 
-            public function get($model, string $key, $value, array $attributes)
+            /** @param array<string, mixed> $attributes */
+            public function get(Model $model, string $key, mixed $value, array $attributes): mixed
             {
                 // Return raw stored value (already validated on set).
                 return $value;
             }
 
-            public function set($model, string $key, $value, array $attributes)
+            /** @param array<string, mixed> $attributes
+             * @return array<string, mixed> */
+            public function set(Model $model, string $key, mixed $value, array $attributes): array
             {
                 $enum = $this->enumClass;
                 if ($value === null) {
@@ -114,7 +126,7 @@ abstract class Enum implements Castable
                     return [$key => $enum::getValue($value)];
                 }
 
-                throw new \InvalidArgumentException("Invalid value '{$value}' for enum {$enum}.");
+                throw new \InvalidArgumentException('Invalid ' . get_debug_type($value) . " value for enum {$enum}.");
             }
         };
     }

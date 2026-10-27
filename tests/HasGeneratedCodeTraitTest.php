@@ -4,12 +4,11 @@ namespace Essa\APIToolKit\Tests;
 
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
 use Illuminate\Database\Eloquent\Model;
+use PHPUnit\Framework\Attributes\Test;
 
 class HasGeneratedCodeTraitTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function refreshCodeGeneratesNewCode(): void
     {
         $model = TestModel::factory()->create();
@@ -21,9 +20,7 @@ class HasGeneratedCodeTraitTest extends TestCase
         $this->assertNotEquals($oldCode, $newCode);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testGenerateCodeCreatesUniqueCodes(): void
     {
         $model1 = TestModel::factory()->create();
@@ -35,9 +32,7 @@ class HasGeneratedCodeTraitTest extends TestCase
         $this->assertNotEquals($code1, $code2);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function findByCodeScope(): void
     {
         $model = TestModel::factory()->create();

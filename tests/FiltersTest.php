@@ -6,12 +6,11 @@ use Carbon\Carbon;
 use Essa\APIToolKit\Tests\Mocks\Models\SluggableTestModel;
 use Essa\APIToolKit\Tests\Mocks\Models\TestModel;
 use Illuminate\Http\Request;
+use PHPUnit\Framework\Attributes\Test;
 
 class FiltersTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function generateFiltersClass(): void
     {
         $name = 'TestFilters';
@@ -28,9 +27,7 @@ class FiltersTest extends TestCase
         $this->assertStringContainsString("class {$name}", file_get_contents($actionClassPath));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassToSearchForColumn(): void
     {
         TestModel::factory(5)->create([
@@ -50,9 +47,7 @@ class FiltersTest extends TestCase
         $this->assertCount(5, $records);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassToFilterByColumn(): void
     {
         TestModel::factory(5)->create();
@@ -67,6 +62,7 @@ class FiltersTest extends TestCase
         $this->assertEquals(2, $records->first()->id);
     }
 
+    #[Test]
     public function useFilterClassToSortDateAscending(): void
     {
         TestModel::factory()->create([
@@ -85,9 +81,7 @@ class FiltersTest extends TestCase
         $this->assertTrue($records[0]->created_at <= $records[1]->created_at);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithSortsAsc(): void
     {
         TestModel::factory()->create([
@@ -106,9 +100,7 @@ class FiltersTest extends TestCase
         $this->assertEquals('Apple', $records->first()->name);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithSortsDesc(): void
     {
         TestModel::factory()->create([
@@ -127,9 +119,7 @@ class FiltersTest extends TestCase
         $this->assertEquals('Zebra', $records->first()->name);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithCustomFilter(): void
     {
         TestModel::factory(2)->create([
@@ -152,9 +142,7 @@ class FiltersTest extends TestCase
         $this->assertCount(7, $records);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithRelationSearch(): void
     {
         $modelWithOutRelation = TestModel::factory()->create([
@@ -179,9 +167,7 @@ class FiltersTest extends TestCase
         $this->assertCount(1, $records);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function useFilterClassWithInclude(): void
     {
         $model = TestModel::factory()->create();

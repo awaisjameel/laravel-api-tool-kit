@@ -1,25 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Traits;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/** @phpstan-require-extends Model */
 trait HasCreatedBy
 {
     protected static function bootHasCreatedBy(): void
     {
-        static::creating(function (Model $model): void {
+        static::creating(function (self $model): void {
             if (auth()->check()) {
-                $model->created_by = auth()
-                    ->id();
+                $model->setAttribute('created_by', auth()->id());
             }
         });
     }
 
+    /** @return BelongsTo<Model, $this> */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        $userClass = config('auth.providers.users.model');
+        if (!is_string($userClass) || !is_a($userClass, Model::class, true)) {
+            throw new \InvalidArgumentException('Configure an Eloquent user model for createdBy.');
+        }
+        return $this->belongsTo($userClass, 'created_by');
     }
 }

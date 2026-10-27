@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Commands;
 
 use Illuminate\Console\GeneratorCommand;
@@ -43,7 +45,7 @@ class MakeFilterCommand extends GeneratorCommand
         return $rootNamespace . '\Filters';
     }
 
-    protected function replaceClass($stub, $name): array|string
+    protected function replaceClass($stub, $name): string
     {
         $class = str_replace($this->getNamespace($name) . '\\', '', $name);
 
@@ -59,7 +61,7 @@ class MakeFilterCommand extends GeneratorCommand
         foreach ($searches as $search) {
             $stub = str_replace(
                 $search,
-                [$this->getNamespace($name), $this->rootNamespace(), $this->userProviderModel()],
+                [$this->getNamespace($name), $this->rootNamespace(), $this->userProviderModel() ?? 'App\\Models\\User'],
                 $stub
             );
         }

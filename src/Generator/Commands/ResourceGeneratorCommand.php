@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Commands;
 
 use Essa\APIToolKit\Enum\GeneratorFilesType;
@@ -8,8 +10,11 @@ use Essa\APIToolKit\Generator\SchemaParsers\ResourceAttributesParser;
 
 class ResourceGeneratorCommand extends GeneratorCommand implements HasDynamicContentInterface
 {
-    protected string $type = GeneratorFilesType::RESOURCE;
+    protected GeneratorFilesType $type = GeneratorFilesType::RESOURCE;
 
+    /**
+     * @return array<string, string>
+     */
     public function getContent(): array
     {
         return [

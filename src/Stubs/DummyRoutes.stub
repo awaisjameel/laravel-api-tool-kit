@@ -8,7 +8,7 @@ Route::apiResource('/{{routeName}}', \{{DummyControllerWithNameSpace}}::class);
 Route::group([
    'prefix' => '{{routeName}}',
 ], function() {
-    Route::get('{id}/restore', [\{{DummyControllerWithNameSpace}}::class, 'restore']);
+    Route::post('{id}/restore', [\{{DummyControllerWithNameSpace}}::class, 'restore']);
     Route::delete('{id}/permanent-delete', [\{{DummyControllerWithNameSpace}}::class, 'permanentDelete']);
 });@endif('soft-delete')
 /*=====  End of {{routeName}}   ======*/

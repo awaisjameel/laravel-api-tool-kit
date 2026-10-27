@@ -4,12 +4,11 @@ namespace Essa\APIToolKit\Tests;
 
 use Essa\APIToolKit\Tests\Mocks\Models\SluggableTestModel;
 use Illuminate\Database\Eloquent\Model;
+use PHPUnit\Framework\Attributes\Test;
 
 class SluggableTraitTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function generatesSlugOnCreating(): void
     {
         $model = SluggableTestModel::create([
@@ -19,9 +18,7 @@ class SluggableTraitTest extends TestCase
         $this->assertSame('test-title', $model->slug);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function findBySlugScope(): void
     {
         $model = SluggableTestModel::create([

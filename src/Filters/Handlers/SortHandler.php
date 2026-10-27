@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Filters\Handlers;
 
 use Closure;
@@ -30,6 +32,7 @@ class SortHandler implements QueryFiltersHandlerInterface
         return $next($queryFiltersOptionsDTO);
     }
 
+    /** @return 'asc'|'desc' */
     private function getDirection(string $sort): string
     {
         return str_starts_with($sort, '-') ? 'desc' : 'asc';

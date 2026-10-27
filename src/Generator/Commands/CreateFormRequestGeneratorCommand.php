@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\Commands;
 
 use Essa\APIToolKit\Enum\GeneratorFilesType;
@@ -8,8 +10,11 @@ use Essa\APIToolKit\Generator\SchemaParsers\CreateValidationRulesParser;
 
 class CreateFormRequestGeneratorCommand extends GeneratorCommand implements HasDynamicContentInterface
 {
-    protected string $type = GeneratorFilesType::CREATE_REQUEST;
+    protected GeneratorFilesType $type = GeneratorFilesType::CREATE_REQUEST;
 
+    /**
+     * @return array<string, string>
+     */
     public function getContent(): array
     {
         return [

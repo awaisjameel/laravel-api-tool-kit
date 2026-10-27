@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Commands;
 
 use Illuminate\Console\GeneratorCommand;
@@ -53,14 +55,14 @@ class MakeActionCommand extends GeneratorCommand
         ];
     }
 
-    protected function replaceClass($stub, $name): array|string
+    protected function replaceClass($stub, $name): string
     {
         $class = str_replace($this->getNamespace($name) . '\\', '', $name);
 
         return str_replace(['{{DummyAction}}', '{{ class }}', '{{class}}'], $class, $stub);
     }
 
-    protected function replaceNamespace(&$stub, $name): MakeEnumCommand|static
+    protected function replaceNamespace(&$stub, $name): static
     {
         $searches = [
             ['{{DummyActionNamespace}}', 'DummyRootNamespace', 'NamespacedDummyUserModel'],
@@ -71,7 +73,7 @@ class MakeActionCommand extends GeneratorCommand
         foreach ($searches as $search) {
             $stub = str_replace(
                 $search,
-                [$this->getNamespace($name), $this->rootNamespace(), $this->userProviderModel()],
+                [$this->getNamespace($name), $this->rootNamespace(), $this->userProviderModel() ?? 'App\\Models\\User'],
                 $stub
             );
         }

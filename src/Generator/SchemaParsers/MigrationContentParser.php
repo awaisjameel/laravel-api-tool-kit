@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit\Generator\SchemaParsers;
 
 use Essa\APIToolKit\Generator\ColumnDefinition;
+use Essa\APIToolKit\Generator\Helpers\PhpLiteral;
+use Essa\APIToolKit\Generator\ModelNaming;
 use Essa\APIToolKit\Generator\SchemaDefinition;
 use Illuminate\Support\Str;
 
@@ -17,6 +21,20 @@ class MigrationContentParser extends SchemaParser
 
     private function generateColumnDefinition(ColumnDefinition $definition): string
     {
+        if ($definition->isForeignKey()) {
+            $columnOptions = [];
+            $foreignOptions = [];
+            foreach ($definition->getOptions() as $option) {
+                $method = explode('(', $option, 2)[0];
+                if (in_array($method, ['cascadeOnDelete', 'cascadeOnUpdate', 'nullOnDelete', 'nullOnUpdate', 'restrictOnDelete', 'restrictOnUpdate', 'noActionOnDelete', 'noActionOnUpdate', 'onDelete', 'onUpdate', 'references', 'on', 'deferrable', 'initiallyImmediate'], true)) {
+                    $foreignOptions[] = $option;
+                } else {
+                    $columnOptions[] = $option;
+                }
+            }
+            $table = ModelNaming::tableName(Str::studly(Str::beforeLast($definition->getName(), '_id')));
+            return "\$table->foreignId('{$definition->getName()}')" . $this->getOptionString($columnOptions) . "->constrained('{$table}')" . $this->getOptionString($foreignOptions) . ';';
+        }
         $columnDefinition = $this->getColumnDefinition($definition);
         $optionsString = $this->getOptionString($definition->getOptions());
 
@@ -25,24 +43,18 @@ class MigrationContentParser extends SchemaParser
 
     private function getColumnDefinition(ColumnDefinition $definition): string
     {
-        if ($definition->isForeignKey()) {
-            return $this->getForeignKeyColumnDefinition($definition->getName());
-        }
-
         if ($definition->isEnumType()) {
             return $this->getEnumColumnDefinition($definition);
         }
 
-        return "\$table->{$definition->getType()}('{$definition->getName()}')";
+        $arguments = $definition->getTypeArguments();
+        $extra = $arguments !== [] ? ', ' . implode(', ', $arguments) : '';
+        return "\$table->{$definition->getType()}('{$definition->getName()}'{$extra})";
     }
 
-    private function getForeignKeyColumnDefinition(string $columnName): string
-    {
-        $relatedTable = Str::plural(Str::beforeLast($columnName, '_id'));
-
-        return "\$table->foreignId('{$columnName}')->constrained('{$relatedTable}')";
-    }
-
+    /**
+     * @param list<string> $options
+     */
     private function getOptionString(array $options): string
     {
         return collect($options)
@@ -57,7 +69,7 @@ class MigrationContentParser extends SchemaParser
 
     private function getEnumColumnDefinition(ColumnDefinition $definition): string
     {
-        $enumValuesString = "'" . implode("', '", $definition->getEnumValues()) . "'";
+        $enumValuesString = PhpLiteral::stringList($definition->getEnumValues());
 
         return "\$table->enum('{$definition->getName()}', [{$enumValuesString}])";
     }

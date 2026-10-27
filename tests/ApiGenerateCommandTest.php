@@ -12,6 +12,8 @@ use Essa\APIToolKit\Generator\SchemaParsers\MigrationContentParser;
 use Essa\APIToolKit\Generator\SchemaParsers\RelationshipMethodsParser;
 use Essa\APIToolKit\Generator\SchemaParsers\ResourceAttributesParser;
 use Essa\APIToolKit\Generator\SchemaParsers\UpdateValidationRulesParser;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Command\Command;
 
 class ApiGenerateCommandTest extends TestCase
@@ -33,9 +35,7 @@ class ApiGenerateCommandTest extends TestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function reservedNameValidation(): void
     {
         $this->artisan('api:generate', [
@@ -45,9 +45,7 @@ class ApiGenerateCommandTest extends TestCase
             ->assertExitCode(Command::FAILURE);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function invalidGroupName(): void
     {
         $this->artisan('api:generate', [
@@ -58,11 +56,9 @@ class ApiGenerateCommandTest extends TestCase
             ->assertExitCode(Command::FAILURE);
     }
 
-    /**
-     * @test
-     * @dataProvider generatedTypeProvider
-     */
-    public function generateCommandWithAllDefaults(string $fileType): void
+    #[Test]
+    #[DataProvider('generatedTypeProvider')]
+    public function generateCommandWithAllDefaults(GeneratorFilesType $fileType): void
     {
         $model = 'GeneratedModel';
 
@@ -71,7 +67,7 @@ class ApiGenerateCommandTest extends TestCase
             '--all' => true,
         ])->assertExitCode(Command::SUCCESS);
 
-        $generatedFilePath = PathConfigHandler::generateFilePathInfo('default', $fileType, $model);
+        $generatedFilePath = PathConfigHandler::generateFilePathInfo('default', $fileType->value, $model);
 
         $this->assertFileExists($generatedFilePath->getFullPath());
 
@@ -83,10 +79,8 @@ class ApiGenerateCommandTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
-    public function generateCommandWithSchemaShouldGenerateModelWithFillableAndRelations(): void
+    #[Test]
+    public function generateCommandWithSchemaShouldPreserveUnguardedModelScaffoldingAndRelations(): void
     {
         $model = 'GeneratedModel';
 
@@ -99,7 +93,7 @@ class ApiGenerateCommandTest extends TestCase
         $generatedModelContent = $this->getFileContentsForType($model, GeneratorFilesType::MODEL);
 
         $this->assertStringContainsString(
-            $this->normalizeWhitespaceAndNewlines("protected \$fillable = [ 'username', 'email', 'company_data_id', ];"),
+            $this->normalizeWhitespaceAndNewlines('protected $guarded = [];'),
             $this->normalizeWhitespaceAndNewlines($generatedModelContent)
         );
 
@@ -109,9 +103,7 @@ class ApiGenerateCommandTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithAllDefaultsAndSchemaShouldGenerateMigration(): void
     {
         $model = 'GeneratedModel';
@@ -131,9 +123,7 @@ class ApiGenerateCommandTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithAllDefaultsAndSchemaShouldGenerateFactory(): void
     {
         $model = 'GeneratedModel';
@@ -153,9 +143,7 @@ class ApiGenerateCommandTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithAllDefaultsAndSchemaShouldGenerateResource(): void
     {
         $model = 'GeneratedModel';
@@ -175,9 +163,7 @@ class ApiGenerateCommandTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithAllDefaultsAndSchemaShouldGenerateRequests(): void
     {
         $model = 'GeneratedModel';
@@ -203,9 +189,7 @@ class ApiGenerateCommandTest extends TestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithoutDefaultOptionsButWithSoftDelete(): void
     {
         $model = 'CustomSoftDeleteModel';
@@ -223,6 +207,7 @@ class ApiGenerateCommandTest extends TestCase
         $this->assertStringContainsString('forceDelete', $this->getFileContentsForType($model, GeneratorFilesType::CONTROLLER));
     }
 
+    #[Test]
     public function generateCommandWithoutDefaultOptionsButWithoutSoftDelete(): void
     {
         $model = 'CustomModel';
@@ -239,9 +224,7 @@ class ApiGenerateCommandTest extends TestCase
         $this->assertStringNotContainsString('forceDelete', $this->getFileContentsForType($model, GeneratorFilesType::CONTROLLER));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function generateCommandWithoutDefaultOptions(): void
     {
         $model = 'WithoutDefaultNewCustomModel';
@@ -271,13 +254,13 @@ class ApiGenerateCommandTest extends TestCase
         $this->assertFileDoesNotExist($this->getGeneratedFilePathForDefaultGroup($model, GeneratorFilesType::FACTORY)->getFullPath());
     }
 
-    private function getFileContentsForType(string $model, string $type): string|false
+    private function getFileContentsForType(string $model, GeneratorFilesType $type): string|false
     {
         return file_get_contents($this->getGeneratedFilePathForDefaultGroup($model, $type)->getFullPath());
     }
 
-    private function getGeneratedFilePathForDefaultGroup(string $model, string $type): GeneratedFileInfo
+    private function getGeneratedFilePathForDefaultGroup(string $model, GeneratorFilesType $type): GeneratedFileInfo
     {
-        return PathConfigHandler::generateFilePathInfo('default', $type, $model);
+        return PathConfigHandler::generateFilePathInfo('default', $type->value, $model);
     }
 }

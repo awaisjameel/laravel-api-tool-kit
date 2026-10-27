@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace {{DummyFactoryNameSpace}};
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use {{DummyModelWithNameSpace}};
 
 class {{DummyFactory}} extends Factory
 {
+    protected $model = {{DummyModel}}::class;
     public function definition(): array
     {
         return [

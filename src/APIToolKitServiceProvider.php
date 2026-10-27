@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Essa\APIToolKit;
 
 use Essa\APIToolKit\Commands\ApiGenerateCommand;
 use Essa\APIToolKit\Commands\GeneratePermissions;
+use Essa\APIToolKit\Commands\InstallSkillCommand;
 use Essa\APIToolKit\Commands\MakeActionCommand;
-use Essa\APIToolKit\Commands\MakeEnumCommand;
 use Essa\APIToolKit\Commands\MakeFilterCommand;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,6 +20,8 @@ class APIToolKitServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit.php', 'api-tool-kit');
+        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit-internal.php', 'api-tool-kit-internal');
     }
 
     public function boot(): void
@@ -31,10 +35,6 @@ class APIToolKitServiceProvider extends ServiceProvider
 
     private function AddConfigFiles(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit.php', 'api-tool-kit');
-
-        $this->mergeConfigFrom(__DIR__ . '/../config/api-tool-kit-internal.php', 'api-tool-kit-internal');
-
         if ($this->app->runningInConsole() && function_exists('config_path')) {
             $this->publishes([
                 __DIR__ . '/../config/api-tool-kit.php' => config_path('api-tool-kit.php'),
@@ -48,9 +48,9 @@ class APIToolKitServiceProvider extends ServiceProvider
             $this->commands([
                 ApiGenerateCommand::class,
                 MakeActionCommand::class,
-                MakeEnumCommand::class,
                 GeneratePermissions::class,
                 MakeFilterCommand::class,
+                InstallSkillCommand::class,
             ]);
         }
     }

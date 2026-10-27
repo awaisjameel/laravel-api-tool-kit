@@ -1,17 +1,19 @@
-  name: Run Code Check
-
-  on: [push]
-
-  jobs:
-    check-code:
-      runs-on: ubuntu-latest
-
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
-
-        - name: Install dependencies
-          run: composer install
-
-        - name: Run Duster
-          run: composer check-code
+name: Run Code Check
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  check-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, mbstring, zip, pdo_sqlite, fileinfo
+          coverage: none
+      - uses: ramsey/composer-install@v4
+      - run: composer validate --strict
+      - run: composer check-code
+      - run: composer audit --no-interaction
