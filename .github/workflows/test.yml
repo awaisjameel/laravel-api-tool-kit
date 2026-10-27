@@ -16,11 +16,12 @@ jobs:
         exclude:
           - php: '8.2'
             laravel: '13'
+        # Tilde constraints: cmd.exe strips '^' from composer arguments on Windows runners.
         include:
           - laravel: '12'
-            testbench: '^10.12'
+            testbench: '~10.12'
           - laravel: '13'
-            testbench: '^11.3'
+            testbench: '~11.3'
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }} / ${{ matrix.stability }} / ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -29,7 +30,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, mbstring, zip, pdo_sqlite, fileinfo
           coverage: none
-      - run: composer require "laravel/framework:^${{ matrix.laravel }}.0" "orchestra/testbench:${{ matrix.testbench }}" --no-update --no-interaction
+      - run: composer require "laravel/framework:~${{ matrix.laravel }}.0" "orchestra/testbench:${{ matrix.testbench }}" --no-update --no-interaction
       - run: composer update --prefer-${{ matrix.stability }} --prefer-dist --no-interaction --no-progress
       - run: php vendor/bin/phpunit --colors=always
       - run: composer audit --no-interaction
